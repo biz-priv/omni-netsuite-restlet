@@ -20,12 +20,12 @@ const source_system = "CW";
 
 module.exports.handler = async (event, context, callback) => {
   userConfig = getConfig(source_system, process.env);
-  //  const checkIsRunning = await checkOldProcessIsRunning();
-  // if (checkIsRunning) {
-  //   return {
-  //     hasMoreData: "false",
-  //   };
-  // }
+   const checkIsRunning = await checkOldProcessIsRunning();
+  if (checkIsRunning) {
+    return {
+      hasMoreData: "false",
+    };
+  }
   let hasMoreData = "false";
   let currentCount = 0;
   totalCountPerLoop = event.hasOwnProperty("totalCountPerLoop")
@@ -184,7 +184,7 @@ async function getcustomer(entityId) {
       token: userConfig.token.token_key,
       token_secret: userConfig.token.token_secret,
       realm: userConfig.account,
-      url: `${process.env.NS_CUSTOMER_URL}&custscript_mfc_entity_eid=${entityId}`,
+      url: `${process.env.NS_CUSTOMER_URL}&deploy=1&custscript_mfc_entity_eid=${entityId}`,
       method: "GET",
     };
     const authHeader = getAuthorizationHeader(options);
