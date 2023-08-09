@@ -39,7 +39,7 @@ module.exports.handler = async (event, context, callback) => {
      */
     const orderData = await getDataGroupBy(connections);
 
-    console.info("orderData", orderData.length, orderData[0]);
+    console.info("orderData", orderData.length);
     const invoiceIDs = orderData.map((a) => "'" + a.invoice_nbr + "'");
     console.info("invoiceIDs", invoiceIDs);
 
@@ -116,7 +116,7 @@ async function mainProcess(item, invoiceDataList) {
      * create Netsuit Invoice
      */
     const invoiceId = await createInvoice(jsonPayload, singleItem);
-    console.log("invoiceId", invoiceId);
+    console.info("invoiceId", invoiceId);
 
     /**
      * update invoice id

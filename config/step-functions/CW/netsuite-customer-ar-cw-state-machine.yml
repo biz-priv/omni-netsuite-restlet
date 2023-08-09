@@ -25,6 +25,9 @@ stateMachine:
           - Variable: $.hasMoreData
             StringEquals: "true"
             Next: PublishEvents
+          - Variable: $.isCustomerStepRunning
+            StringEquals: "false"
+            Next: SuccessState
       InvokeLambda:
         Type: Task
         Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-ar-cw-${self:provider.stage}"

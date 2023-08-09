@@ -20,10 +20,10 @@ const source_system = "CW";
 
 module.exports.handler = async (event, context, callback) => {
   userConfig = getConfig(source_system, process.env);
-   const checkIsRunning = await checkOldProcessIsRunning();
+  const checkIsRunning = await checkOldProcessIsRunning();
   if (checkIsRunning) {
     return {
-      hasMoreData: "false",
+      isCustomerStepRunning: "false",
     };
   }
   let hasMoreData = "false";
@@ -42,7 +42,7 @@ module.exports.handler = async (event, context, callback) => {
      */
     const customerList = await getCustomerData(connections);
     console.info("customerList", customerList);
-    
+
     currentCount = customerList.length;
 
     for (let i = 0; i < customerList.length; i++) {
@@ -57,7 +57,7 @@ module.exports.handler = async (event, context, callback) => {
         /**
          * Update customer details into DB
          */
-    
+
         await putCustomer(connections, customerData, customer_id);
         console.info("count", i + 1);
       } catch (error) {
@@ -77,7 +77,7 @@ module.exports.handler = async (event, context, callback) => {
             );
           }
         } catch (error) {
-          console.log("err", error);
+          console.error("err", error);
           await sendDevNotification(
             source_system,
             "AR",
@@ -151,7 +151,7 @@ async function getcustomer(entityId) {
       token: userConfig.token.token_key,
       token_secret: userConfig.token.token_secret,
       realm: userConfig.account,
-      url: `${process.env.NS_CUSTOMER_URL}&deploy=1&custscript_mfc_entity_eid=${entityId}`,
+      url: `${process.env.NS_BASE_URL}&deploy=1&custscript_mfc_entity_eid=${entityId}`,
       method: "GET",
     };
     const authHeader = getAuthorizationHeader(options);
@@ -165,11 +165,9 @@ async function getcustomer(entityId) {
       },
     };
 
-    
-    const response =  await axios.request(configApi);
+    const response = await axios.request(configApi);
 
     console.info("response", response.status);
-    console.info("response", response.data);
 
     const recordList = response.data[0];
     if (recordList && recordList.internalid) {
@@ -185,7 +183,7 @@ async function getcustomer(entityId) {
     console.error("error", err);
     throw {
       customError: true,
-      msg: `Customer not found. (customer_id: ${entityId})`, 
+      msg: `Customer not found. (customer_id: ${entityId})`,
     };
   }
 }
@@ -255,7 +253,7 @@ async function putCustomer(connections, customerData, customer_id) {
       terms_refName: customerData?.terms,
       created_at: moment().format("YYYY-MM-DD"),
     };
-   
+
 
     let tableStr = "";
     let valueStr = "";
@@ -277,7 +275,7 @@ async function putCustomer(connections, customerData, customer_id) {
     const upsertQuery = `INSERT INTO ${arDbNamePrev}netsuit_customer (${tableStr})
                         VALUES (${valueStr}) ON DUPLICATE KEY
                         UPDATE ${updateStr};`;
-    console.log("query", upsertQuery);
+    console.info("query", upsertQuery);
     await connections.execute(upsertQuery);
 
     const updateQuery = `UPDATE ${arDbName} SET 
@@ -285,7 +283,7 @@ async function putCustomer(connections, customerData, customer_id) {
                     customer_internal_id = '${customer_internal_id}', 
                     processed_date = '${today}' 
                     WHERE customer_id = '${customer_id}' and source_system = '${source_system}' and customer_internal_id is null`;
-    console.log("updateQuery", updateQuery);
+    console.info("updateQuery", updateQuery);
     await connections.execute(updateQuery);
   } catch (error) {
     console.error(error);
@@ -299,10 +297,10 @@ async function updateFailedRecords(connections, cus_id) {
                   SET processed = 'F',
                   processed_date = '${today}' 
                   WHERE customer_id = '${cus_id}' and source_system = '${source_system}' and customer_internal_id is null`;
-    console.log("query", query);
+    console.info("query", query);
     const result = await connections.execute(query);
     return result;
-  } catch (error) {}
+  } catch (error) { }
 }
 
 function getCustomDate() {
@@ -319,7 +317,7 @@ async function checkOldProcessIsRunning() {
   try {
     //cw ar 
     const customerArn = process.env.NETSUITE_AR_CW_CUSTOMER_STEP_ARN;
-    
+
 
     const status = "RUNNING";
     const stepfunctions = new AWS.StepFunctions();
@@ -345,7 +343,7 @@ async function checkOldProcessIsRunning() {
 
     const customerExcList = await getExecutionList(customerArn);
     if (customerExcList.length === 2 && customerExcList[1].status === status) {
-      console.log("AR running");
+      console.info("AR running");
       return true;
     }
 

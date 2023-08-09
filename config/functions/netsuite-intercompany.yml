@@ -3,7 +3,7 @@ function:
   handler: src/netsuite_intercompany.handler
   layers:
     - { Ref: CommonNetsuiteLibsLambdaLayer }
-  name: ${self:service}-intercompany-${self:provider.stage}
+  name: ${self:service}-intercompany-cw-${self:provider.stage}
   description: Netsuite Intercompany api service - ${self:provider.stage}
   runtime: nodejs14.x
   memorySize: 2048
@@ -14,4 +14,4 @@ function:
       - Helpers/**
   environment:
     NETSUITE_INTERCOMPANY_BASE_URL: ${ssm:/omni-dw/${self:provider.stage}/netsuit/intercompany/url}
-    NETSUITE_INTERCOMPANY_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-intercompany-state-machine-${self:provider.stage}
+    NETSUITE_INTERCOMPANY_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-intercompany-cw-state-machine-${self:provider.stage}

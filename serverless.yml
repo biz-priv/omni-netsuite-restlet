@@ -60,7 +60,7 @@ provider:
     NETSUIT_AR_ERROR_EMAIL_FROM: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/from}
     NETSUIT_AR_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/to}
     NS_RESTLET_INVOICE_REPORT: ${self:service}-invoice-report-${self:provider.stage}
-    NS_CUSTOMER_URL: https://1238234-sb1.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=1017&deploy=1
+    NS_BASE_URL: https://1238234-sb1.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=1017
 
 plugins:
   - serverless-offline
@@ -93,11 +93,13 @@ functions:
   #report fn
   invoice-report: ${file(config/functions/invoice-report.yml):function}
 
+  #Intercompany fn
+  netsuite-cw-intercompany-restlet: ${file(config/functions/netsuite-intercomapny.yml):function}
 
 stepFunctions:
   stateMachines:
     netsuite-customer-ar-cw-restlet: ${file(config/step-functions/CW/netsuite-customer-ar-cw-state-machine.yml):stateMachine}
     netsuite-vendor-ap-cw-restlet: ${file(config/step-functions/CW/netsuite-vendor-ap-cw-state-machine.yml):stateMachine}
 
-    # intercompny
+    #cw intercompny 
     netsuite-cw-intercompany-restlet: ${file(config/step-functions/netsuite-intercompany-state-machine.yml):stateMachine}
