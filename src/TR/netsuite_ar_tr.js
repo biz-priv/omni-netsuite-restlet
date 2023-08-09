@@ -16,7 +16,7 @@ let connections = "";
 
 const arDbNamePrev = process.env.DATABASE_NAME;
 const arDbName = arDbNamePrev + "interface_ar";
-const source_system = "CW";
+const source_system = "TR";
 let totalCountPerLoop = 20;
 const today = getCustomDate();
 
@@ -72,13 +72,13 @@ module.exports.handler = async (event, context, callback) => {
     if (currentCount > totalCountPerLoop) {
       hasMoreData = "true";
     } else {
-      await triggerReportLambda(process.env.NS_RESTLET_INVOICE_REPORT, "CW_AR");
+      await triggerReportLambda(process.env.NS_RESTLET_INVOICE_REPORT, "TR_AR");
       await startNextStep();
       hasMoreData = "false";
     }
     return { hasMoreData };
   } catch (error) {
-    await triggerReportLambda(process.env.NS_RESTLET_INVOICE_REPORT, "CW_AR");
+    await triggerReportLambda(process.env.NS_RESTLET_INVOICE_REPORT, "TR_AR");
     await startNextStep();
     return { hasMoreData: "false" };
   }
@@ -219,7 +219,7 @@ async function makeJsonPayload(data) {
       entity: singleItem.customer_internal_id ?? "",
       subsidiary: singleItem.subsidiary ?? "",
       currency: singleItem.currency_internal_id ?? "",
-      otherrefnum: singleItem.file_nbr ?? "",
+      otherrefnum: singleItem.file_nbr ?? "",//1730
       custbody_mode: singleItem?.mode_name ?? "",//2673
       custbody_service_level: singleItem?.service_level ?? "",//2674
       custbody18: singleItem.finalized_date ?? "",//1745
@@ -261,7 +261,7 @@ async function makeJsonPayload(data) {
     await sendDevNotification(
       source_system,
       "AR",
-      "netsuite_ar_cw payload error",
+      "netsuite_ar_tr payload error",
       data[0],
       error
     );
@@ -400,7 +400,7 @@ async function updateInvoiceId(connections, query) {
       await sendDevNotification(
         source_system,
         "AR",
-        "netsuite_ar_cw updateInvoiceId",
+        "netsuite_ar_tr updateInvoiceId",
         "Invoice is created But failed to update internal_id " + element,
         error
       );
