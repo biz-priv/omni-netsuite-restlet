@@ -315,39 +315,29 @@ function getCustomDate() {
 
 async function checkOldProcessIsRunning() {
   try {
-    //cw ar 
     const customerArn = process.env.NETSUITE_AR_CW_CUSTOMER_STEP_ARN;
-
-
     const status = "RUNNING";
     const stepfunctions = new AWS.StepFunctions();
 
-    const getExecutionList = async (stateMachineArn) => {
-      return new Promise((resolve, reject) => {
-        stepfunctions.listExecutions(
-          {
-            stateMachineArn,
-            statusFilter: status,
-            maxResults: 2,
-          },
-          (err, data) => {
-            if (err) {
-              reject(err);
-            } else {
-              resolve(data.executions);
-            }
-          }
-        );
-      });
-    };
+    const data = await stepfunctions.listExecutions({
+      stateMachineArn: customerArn,
+      statusFilter: status,
+      maxResults: 2,
+    });
 
-    const customerExcList = await getExecutionList(customerArn);
-    if (customerExcList.length === 2 && customerExcList[1].status === status) {
-      console.info("AR running");
+    console.log("AR listExecutions data", data);
+    const cusExcList = data.executions;
+
+    if (
+      data &&
+      cusExcList.length === 2 &&
+      cusExcList[1].status === status
+    ) {
+      console.log("AR running");
       return true;
+    } else {
+      return false;
     }
-
-    return false;
   } catch (error) {
     return true;
   }

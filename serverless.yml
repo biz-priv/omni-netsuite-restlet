@@ -94,7 +94,7 @@ functions:
   invoice-report: ${file(config/functions/invoice-report.yml):function}
 
   #Intercompany fn
-  netsuite-cw-intercompany-restlet: ${file(config/functions/netsuite-intercomapny.yml):function}
+  netsuite-cw-intercompany-restlet: ${file(config/functions/netsuite-intercompany.yml):function}
 
 stepFunctions:
   stateMachines:

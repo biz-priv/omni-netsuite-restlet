@@ -246,35 +246,31 @@ function getCustomDate() {
 }
 
 async function checkOldProcessIsRunning() {
-  return new Promise((resolve, reject) => {
-    try {
-      //intercompant arn
-      const intercompany = process.env.NETSUITE_INTERCOMPANY_ARN;
-      const status = "RUNNING";
-      const stepfunctions = new AWS.StepFunctions();
-      stepfunctions.listExecutions(
-        {
-          stateMachineArn: intercompany,
-          statusFilter: status,
-          maxResults: 2,
-        },
-        (err, data) => {
-          console.log(" Intercompany listExecutions data", data);
-          const venExcList = data.executions;
-          if (
-            err === null &&
-            venExcList.length == 2 &&
-            venExcList[1].status === status
-          ) {
-            console.log("Intercompany running");
-            resolve(true);
-          } else {
-            resolve(false);
-          }
-        }
-      );
-    } catch (error) {
-      resolve(true);
+  try {
+    const intercompany = process.env.NETSUITE_INTERCOMPANY_ARN;
+    const status = "RUNNING";
+    const stepfunctions = new AWS.StepFunctions();
+
+    const data = await stepfunctions.listExecutions({
+      stateMachineArn: intercompany,
+      statusFilter: status,
+      maxResults: 2,
+    });
+
+    console.log("Intercompany listExecutions data", data);
+    const intercomExcList = data.executions;
+
+    if (
+      data &&
+      intercomExcList.length === 2 &&
+      intercomExcList[1].status === status
+    ) {
+      console.log("AR running");
+      return true;
+    } else {
+      return false;
     }
-  });
+  } catch (error) {
+    return true;
+  }
 }
