@@ -173,14 +173,22 @@ async function getVendor(entityId) {
       throw {
         customError: true,
         msg: `Vendor not found. (vendor_id: ${entityId})`,
+        response: response
       };
     }
   } catch (err) {
     console.error("error", err);
-    throw {
-      customError: true,
-      msg: `Vendor not found. (vendor_id: ${entityId})`,
-    };
+    if (err.response.status == 200) {
+      throw {
+        customError: true,
+        msg: `Vendor not found. (vendor_id: ${entityId})`,
+      };
+    } else {
+      throw {
+        customError: true,
+        msg: "Vendor API Failed",
+      };
+    }
   }
 }
 

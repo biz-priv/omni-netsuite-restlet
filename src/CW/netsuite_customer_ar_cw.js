@@ -166,7 +166,6 @@ async function getcustomer(entityId) {
     };
 
     const response = await axios.request(configApi);
-
     console.info("response", response.status);
 
     const recordList = response.data[0];
@@ -177,14 +176,22 @@ async function getcustomer(entityId) {
       throw {
         customError: true,
         msg: `Customer not found. (customer_id: ${entityId})`,
+        response: response
       };
     }
   } catch (err) {
     console.error("error", err);
-    throw {
-      customError: true,
-      msg: `Customer not found. (customer_id: ${entityId})`,
-    };
+    if (err.response.status == 200) {
+      throw {
+        customError: true,
+        msg: `Customer not found. (customer_id: ${entityId})`,
+      };
+    } else {
+      throw {
+        customError: true,
+        msg: "Customer API Failed",
+      };
+    }
   }
 }
 
