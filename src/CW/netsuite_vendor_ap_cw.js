@@ -140,40 +140,7 @@ async function getDataByVendorId(connections, vendor_id) {
   }
 }
 
-// function getVendor(entityId) {
-//   return new Promise((resolve, reject) => {
-//     const NsApi = new NsApiWrapper({
-//       consumer_key: userConfig.token.consumer_key,
-//       consumer_secret_key: userConfig.token.consumer_secret,
-//       token: userConfig.token.token_key,
-//       token_secret: userConfig.token.token_secret,
-//       realm: userConfig.account,
-//     });
-    
-//     NsApi.request({
-//       path: `record/v1/vendor/eid:${entityId}`,
-//     })
-//       .then((response) => {
-//         const recordList = response.data;
-//         if (recordList && recordList.id) {
-//           const record = recordList;
-//           resolve(record);
-//         } else {
-//           reject({
-//             customError: true,
-//             msg: `Vendor not found. (vendor_id: ${entityId})`,
-//           });
-//         }
-//       })
-//       .catch((err) => {
-//         console.log("err", err);
-//         reject({
-//           customError: true,
-//           msg: `Vendor not found. (vendor_id: ${entityId})`,
-//         });
-//       });
-//   });
-// }
+
 
 async function getVendor(entityId) {
   try {

@@ -142,39 +142,6 @@ async function getDataByCustomerId(connections, cus_id) {
   }
 }
 
-// function getcustomer(entityId) {
-//   return new Promise((resolve, reject) => {
-//     const NsApi = new NsApiWrapper({
-//       consumer_key: userConfig.token.consumer_key,
-//       consumer_secret_key: userConfig.token.consumer_secret,
-//       token: userConfig.token.token_key,
-//       token_secret: userConfig.token.token_secret,
-//       realm: userConfig.account,
-//     });
-//     NsApi.request({
-//       path: `record/v1/customer/eid:${entityId}`,
-//     })
-//       .then((response) => {
-//         const recordList = response.data;
-//         if (recordList && recordList.id) {
-//           const record = recordList;
-//           resolve(record);
-//         } else {
-//           reject({
-//             customError: true,
-//             msg: `Customer not found. (customer_id: ${entityId})`,
-//           });
-//         }
-//       })
-//       .catch((err) => {
-//         console.log("error", err);
-//         reject({
-//           customError: true,
-//           msg: `Customer not found. (customer_id: ${entityId})`,
-//         });
-//       });
-//   });
-// }
 
 async function getcustomer(entityId) {
   try {
@@ -218,7 +185,7 @@ async function getcustomer(entityId) {
     console.error("error", err);
     throw {
       customError: true,
-      msg: `Customer not found. (customer_id: ${entityId})`,
+      msg: `Customer not found. (customer_id: ${entityId})`, 
     };
   }
 }
