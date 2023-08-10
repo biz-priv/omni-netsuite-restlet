@@ -19,7 +19,7 @@ stateMachine:
             StringEquals: "true"
             Next: PublishEvents
           - Variable: $.isVendorStepRunning
-            StringEquals: "true"
+            StringEquals: "false"
             Next: SuccessState
       InvokeLambda:
         Type: Task

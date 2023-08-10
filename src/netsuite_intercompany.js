@@ -265,7 +265,7 @@ async function checkOldProcessIsRunning() {
       intercomExcList.length === 2 &&
       intercomExcList[1].status === status
     ) {
-      console.log("AR running");
+      console.log("Intercpmpany running");
       return true;
     } else {
       return false;
