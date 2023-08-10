@@ -93,8 +93,10 @@ functions:
   #report fn
   invoice-report: ${file(config/functions/invoice-report.yml):function}
 
-  #Intercompany fn
-  netsuite-cw-intercompany-restlet: ${file(config/functions/netsuite-intercompany.yml):function}
+  netsuite-ar-m1-restlet: ${file(config/functions/M1/netsuite-ar-m1.yml):function}
+  netsuite-customer-ar-m1-restlet: ${file(config/functions/M1/netsuite-customer-ar-m1.yml):function}
+  netsuite-ap-m1-restlet: ${file(config/functions/M1/netsuite-ap-m1.yml):function}
+  netsuite-vendor-ap-m1-restlet: ${file(config/functions/M1/netsuite-vendor-ap-m1.yml):function}
 
 stepFunctions:
   stateMachines:
@@ -103,3 +105,6 @@ stepFunctions:
 
     #cw intercompny 
     netsuite-cw-intercompany-restlet: ${file(config/step-functions/netsuite-intercompany-state-machine.yml):stateMachine}
+
+    netsuite-customer-ar-m1-restlet: ${file(config/step-functions/M1/netsuite-customer-ar-m1-state-machine.yml):stateMachine}
+    netsuite-vendor-ap-m1-restlet: ${file(config/step-functions/M1/netsuite-vendor-ap-m1-state-machine.yml):stateMachine}    

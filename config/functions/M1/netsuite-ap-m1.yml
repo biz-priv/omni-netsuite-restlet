@@ -1,0 +1,18 @@
+---
+function:
+  handler: src/M1/netsuite_ap_m1.handler
+  layers:
+    - { Ref: CommonNetsuiteLibsLambdaLayer }
+  name: ${self:service}-ap-m1-${self:provider.stage}
+  description: M1 Restlet Netsuite AP api service - ${self:provider.stage}
+  runtime: nodejs14.x
+  memorySize: 2048
+  timeout: 900
+  package:
+    include:
+      - src/M1/netsuite_ap_m1.js
+      - Helpers/**
+  environment:
+    NETSUIT_RESTLET_VB_URL: ${ssm:/omni-dw/${self:provider.stage}/vendorbill/apiEndpoint}
+    NETSUIT_RESTLET_VC_URL: ${ssm:/omni-dw/${self:provider.stage}/vendorcredit/apiEndpoint}
+    FUNCTION_NAME: ${self:service}-ap-m1-${self:provider.stage}
