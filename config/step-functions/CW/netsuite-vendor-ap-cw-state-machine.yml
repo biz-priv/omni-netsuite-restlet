@@ -18,8 +18,8 @@ stateMachine:
           - Variable: $.hasMoreData
             StringEquals: "true"
             Next: PublishEvents
-          - Variable: $.isVendorStepRunning
-            StringEquals: "false"
+          - Variable: $.hasMoreData
+            StringEquals: "running"
             Next: SuccessState
       InvokeLambda:
         Type: Task
