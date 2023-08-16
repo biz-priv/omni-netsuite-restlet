@@ -270,8 +270,7 @@ async function mainProcess(item, invoiceDataList) {
       return (
         e.invoice_nbr == item.invoice_nbr &&
         e.vendor_id == item.vendor_id &&
-        e.invoice_type == item.invoice_type &&
-        e.gc_code == item.gc_code
+        e.invoice_type == item.invoice_type 
       );
     });
     console.log("dataList", dataList.length);
@@ -280,13 +279,11 @@ async function mainProcess(item, invoiceDataList) {
      * set single item and customer data
      */
     singleItem = dataList[0];
-    // console.log("singleItem", singleItem);
 
     /**
      * Make Json payload
      */
     const jsonPayload = await makeJsonPayload(dataList);
-    // console.log("jsonPayload", jsonPayload);
 
     /**
      * create invoice
@@ -337,8 +334,7 @@ async function mainProcess(item, invoiceDataList) {
 async function getDataGroupBy(connections) {
   try {
 
-    const query =  `SELECT invoice_nbr, vendor_id, invoice_type, count(*) as tc
-    FROM ${apDbName} 
+    const query =  `SELECT invoice_nbr, vendor_id, invoice_type, count(*) as tc FROM ${apDbName} 
     WHERE  ((internal_id is null and processed is null and vendor_internal_id is not null) or
     (vendor_internal_id is not null and processed ='F' and processed_date < '${today}'))
     and source_system = '${source_system}' and invoice_nbr != ''
@@ -384,9 +380,7 @@ async function getInvoiceNbrData(connections, invoice_nbr, isBigData = false) {
 async function makeJsonPayload(data) {
   try {
     const singleItem = data[0];
-    const hardcode = getHardcodeData(
-      singleItem?.intercompany == "Y" ? true : false
-    );
+    const hardcode = getHardcodeData();
     /**
      * head level details
      */
@@ -407,13 +401,12 @@ async function makeJsonPayload(data) {
       class: hardcode.class.head,
       department: hardcode.department.head,
       location: hardcode.location.head,
-      otherRefNum: singleItem.customer_po ?? "",
-      custbody9: singleItem.file_nbr ?? "",//1730
-      custbody17: singleItem.email ?? "",//1744
-      custbody_source_system: hardcode.source_system,//2327
-      custbody_omni_po_hawb: singleItem.housebill_nbr ?? "",//1748  //need to check on 1756 internal id with priyanka
-      custbody_mode: singleItem?.mode_name ?? "",//2673
-      custbody_service_level: singleItem?.service_level ?? "",//2674
+      custbody9: singleItem.file_nbr ?? "",
+      custbody17: singleItem.email ?? "",
+      custbody_source_system: hardcode.source_system,
+      custbody_omni_po_hawb: singleItem.housebill_nbr ?? "",
+      custbody_mode: singleItem?.mode_name ?? "",
+      custbody_service_level: singleItem?.service_level ?? "",
       item: data.map((e) => {
         return {
           // custcol_mfc_line_unique_key:"",
@@ -430,30 +423,29 @@ async function makeJsonPayload(data) {
           location: {
             refName: e.handling_stn ?? "",
           },
-          custcol_hawb: e.housebill_nbr ?? "",//760
-          custcol3: e.sales_person ?? "",//1167
-          custcol5: e.master_bill_nbr ?? "",//1727
+          custcol_hawb: e.housebill_nbr ?? "",
+          custcol3: e.sales_person ?? "",
+          custcol5: e.master_bill_nbr ?? "",
           custcol2: {
-            refName: e.controlling_stn ?? "",//1166
+            refName: e.controlling_stn ?? "",
           },
-          custcol4: e.ref_nbr ?? "",//1168
-          custcol_riv_consol_nbr: e.consol_nbr ?? "",////prod:- 2510 dev:- 2506
-          custcol_finalizedby: e.finalizedby ?? "",//2614
+          custcol4: e.ref_nbr ?? "",
+          custcol_riv_consol_nbr: e.consol_nbr ?? "",
+          custcol_finalizedby: e.finalizedby ?? "", //prod:-2614  dev:-2511
         };
       }),
     };
     if (singleItem.invoice_type == "IN") {
-      payload.approvalStatus = "2";
+      payload.approvalstatus = "2";
     }
 
-    console.log("payload", JSON.stringify(payload));
     return payload;
   } catch (error) {
-    console.log("error payload", error);
+    console.error("error payload", error);
     await sendDevNotification(
       source_system,
       "AP",
-      "netsuite_ap_m1 payload error",
+      "netsuite_ap_wt payload error",
       data[0],
       error
     );
@@ -495,7 +487,6 @@ function getAuthorizationHeader(options) {
 }
 
 
-
 async function createInvoice(payload, singleItem) {
   try {
     const endpoiont =
@@ -513,7 +504,7 @@ async function createInvoice(payload, singleItem) {
       method: 'POST',
     };
 
-    const authHeader = await getAuthorizationHeader(options);
+    const authHeader =  getAuthorizationHeader(options);
 
     const configApi = {
       method: options.method,
@@ -525,7 +516,6 @@ async function createInvoice(payload, singleItem) {
       },
       data: JSON.stringify(payload),
     };
-    console.log("configApi",configApi);
 
     const response = await axios.request(configApi);
 
@@ -536,21 +526,21 @@ async function createInvoice(payload, singleItem) {
         customError: true,
         msg: response.data.reason.replace(/'/g, '`'),
         payload: JSON.stringify(payload),
-        response: JSON.stringify(response.data).replace(/'/g, '`'),
+        response: response.data,
       };
     }
   } catch (error) {
-    if (error.response) {
+    if (error?.response?.reason) {
       throw {
         customError: true,
         msg: error.msg.replace(/'/g, '`'),
         payload: error.payload,
-        response: error.response.replace(/'/g, '`'),
+        response: JSON.stringify(error.response).replace(/'/g, '`'),
       };
     } else {
       throw {
         customError: true,
-        msg: 'Netsuit API Failed',
+        msg: 'Netsuit AP API Failed',
         response: '',
       };
     }
@@ -749,7 +739,6 @@ async function updateInvoiceId(connections, query) {
 function getHardcodeData(isIntercompany = false) {
   const data = {
     source_system: "2",
-    finalizedbyInternalId: process.env.STAGE == "dev" ? 2511 : 2614, //prod:-2614  dev:-2511
     class: {
       head: "9",
       line: getBusinessSegment(process.env.STAGE),

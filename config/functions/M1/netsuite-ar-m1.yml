@@ -13,7 +13,7 @@ function:
       - src/M1/netsuite_ar_m1.js
       - Helpers/**
   environment:
-    NETSUITE_VENDOR_STEP_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-netsuite-vendor-ap-m1-state-machine-${self:provider.stage}
+    NETSUITE_VENDOR_STEP_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:netsuite-vendor-ap-m1-restlet-state-machine-${self:provider.stage}
     NETSUIT_RESTLET_INV_URL: ${ssm:/omni-dw/${self:provider.stage}/invoice/apiEndpoint}
     NETSUIT_RESTLET_CM_URL: ${ssm:/omni-dw/${self:provider.stage}/creditmemo/apiEndpoint}
     FUNCTION_NAME: ${self:service}-ar-m1-${self:provider.stage}

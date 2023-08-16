@@ -97,7 +97,9 @@ async function mainProcess(item, invoiceDataList) {
      */
     const dataList = invoiceDataList.filter((e) => {
       return (
-        e.invoice_nbr == item.invoice_nbr && e.invoice_type == item.invoice_type
+        e.invoice_nbr == item.invoice_nbr && 
+        e.invoice_type == item.invoice_type &&
+        e.subsidiary == item.subsidiary
       );
     });
 
@@ -148,12 +150,11 @@ async function mainProcess(item, invoiceDataList) {
 
 async function getDataGroupBy(connections) {
   try {
-    const query = `SELECT distinct invoice_nbr, invoice_type FROM ${arDbName} where
+    const query = `SELECT distinct invoice_nbr,customer_id,invoice_type,subsidiary FROM ${arDbName} where
     ((internal_id is null and processed is null and customer_internal_id is not null) or
     (customer_internal_id is not null and processed ='F' and processed_date < '${today}'))
     and source_system = '${source_system}' and invoice_nbr is not null
     limit ${totalCountPerLoop + 1}`;
-
 
     console.info("query", query);
     const [rows] = await connections.execute(query);
@@ -197,12 +198,12 @@ async function makeJsonPayload(data) {
     const payload = {
       custbody_mfc_omni_unique_key:
         singleItem.invoice_nbr +
-        "-" + 
+        "-" +
         singleItem.customer_id +
         "-" +
         singleItem.invoice_type+
         "-"+
-        singleItem.gc_code, //invoice_nbr,customer_id, invoice_type,gc_code
+        singleItem.subsidiary, //invoice_nbr,customer_id, invoice_type,subsidiary
       tranid: singleItem.invoice_nbr ?? "",
       trandate: singleItem.invoice_date
         ? dateFormat(singleItem.invoice_date)
@@ -210,23 +211,22 @@ async function makeJsonPayload(data) {
       department: hardcode.department.head,
       class: hardcode.class.head,
       location: hardcode.location.head,
-      custbody_source_system: hardcode.source_system,//2327
+      custbody_source_system: hardcode.source_system,
       entity: singleItem.customer_internal_id ?? "",
       subsidiary: singleItem.subsidiary ?? "",
       currency: singleItem.currency_internal_id ?? "",
       otherrefnum: singleItem.file_nbr ?? "",
-      custbody_mode: singleItem?.mode_name ?? "",//2673
-      custbody_service_level: singleItem?.service_level ?? "",//2674
-      custbody18: singleItem.finalized_date ?? "",//1745
-      custbody9: singleItem.housebill_nbr ?? "",//1730 //here in soap we are passing file_nbr
-      custbody17: singleItem.email ?? "",//1744
-      custbody25: singleItem.zip_code ?? "",//2698
-      custbody19: singleItem.unique_ref_nbr ?? "",//1734
+      custbody_mode: singleItem?.mode_name ?? "",
+      custbody_service_level: singleItem?.service_level ?? "",
+      custbody18: singleItem.finalized_date ?? "",
+      custbody9: singleItem.housebill_nbr ?? "",
+      custbody17: singleItem.email ?? "",
+      custbody25: singleItem.zip_code ?? "",
+      custbody29: singleItem.rfiemail ?? "",//dev :custbody29
       item: data.map((e) => {
         return {
           // custcol_mfc_line_unique_key:"",
           item: e.charge_cd_internal_id ?? "",
-          taxcode: e?.tax_code_internal_id ?? "",
           description: e?.charge_cd_desc ?? "",
           amount: +parseFloat(e.total).toFixed(2) ?? "",
           rate: +parseFloat(e.rate).toFixed(2) ?? "",
@@ -238,25 +238,24 @@ async function makeJsonPayload(data) {
           location: {
             refName: e.handling_stn ?? "",
           },
-          custcol_hawb: e.housebill_nbr ?? "",//760
-          custcol3: e.sales_person ?? "",//1167
-          custcol5: e.master_bill_nbr ?? "",//1727
+          custcol_hawb: e.housebill_nbr ?? "",
+          custcol3: e.sales_person ?? "",
+          custcol5: e.master_bill_nbr ?? "",
           custcol2: {
-            refName: e.controlling_stn ?? "",//1166
+            refName: e.controlling_stn ?? "",
           },
-          custcol1: e.ready_date ? e.ready_date.toISOString() : "",//1164
+          custcol1: e.ready_date ? e.ready_date.toISOString() : "",
         };
       }),
     };
 
-    console.log("payload", JSON.stringify(payload));
     return payload;
   } catch (error) {
-    console.log("error payload", error);
+    console.error("error payload", error);
     await sendDevNotification(
       source_system,
       "AR",
-      "netsuite_ar_m1 payload error",
+      "netsuite_ar_wt payload error",
       data[0],
       error
     );
@@ -300,9 +299,9 @@ function getAuthorizationHeader(options) {
 async function createInvoice(payload, singleItem) {
   try {
     const endpoiont =
-        singleItem.invoice_type == "IN"
-          ? process.env.NETSUIT_RESTLET_INV_URL
-          : process.env.NETSUIT_RESTLET_CM_URL;
+      singleItem.invoice_type == "IN"
+        ? process.env.NETSUIT_RESTLET_INV_URL
+        : process.env.NETSUIT_RESTLET_CM_URL;
 
     const options = {
       consumer_key: userConfig.token.consumer_key,
@@ -314,7 +313,7 @@ async function createInvoice(payload, singleItem) {
       method: 'POST',
     };
 
-    const authHeader = await getAuthorizationHeader(options);
+    const authHeader =  getAuthorizationHeader(options);
 
     const configApi = {
       method: options.method,
@@ -327,10 +326,10 @@ async function createInvoice(payload, singleItem) {
       data: JSON.stringify(payload),
     };
 
-    console.log('configApi', configApi);
 
     const response = await axios.request(configApi);
-
+    console.info("response", response.status);
+  
     if (response.status === 200 && response.data.status === 'Success') {
       return response.data.id;
     } else {
@@ -338,17 +337,17 @@ async function createInvoice(payload, singleItem) {
         customError: true,
         msg: response.data.reason.replace(/'/g, '`'),
         payload: JSON.stringify(payload),
-        response: JSON.stringify(response.data).replace(/'/g, '`'),
+        response: response.data,
       };
     }
   } catch (error) {
-    console.log("createInvoice:error", error);
-    if (error.response) {
+    console.error("createInvoice:error", error);
+    if (error?.response?.reason) {
       throw {
         customError: true,
         msg: error.msg.replace(/'/g, '`'),
         payload: error.payload,
-        response: error.response.replace(/'/g, '`'),
+        response: JSON.stringify(error.response).replace(/'/g, '`'),
       };
     } else {
       throw {
