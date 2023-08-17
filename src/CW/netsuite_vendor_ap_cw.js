@@ -307,7 +307,7 @@ async function checkOldProcessIsRunning() {
       maxResults: 2,
     }).promise();
 
-    console.log("AP listExecutions data", data);
+    console.info("AP listExecutions data", data);
     const venExcList = data.executions;
 
     if (
@@ -315,7 +315,7 @@ async function checkOldProcessIsRunning() {
       venExcList.length === 2 &&
       venExcList[1].status === status
     ) {
-      console.log("AP running");
+      console.info("AP running");
       return true;
     } else {
       return false;

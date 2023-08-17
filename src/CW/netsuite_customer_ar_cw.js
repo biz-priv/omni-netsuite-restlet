@@ -322,7 +322,7 @@ async function checkOldProcessIsRunning() {
       maxResults: 2,
     }).promise();
 
-    console.log("AR listExecutions data", data);
+    console.info("AR listExecutions data", data);
     const cusExcList = data.executions;
 
     if (
@@ -330,7 +330,7 @@ async function checkOldProcessIsRunning() {
       cusExcList.length === 2 &&
       cusExcList[1].status === status
     ) {
-      console.log("AR running");
+      console.info("AR running");
       return true;
     } else {
       return false;

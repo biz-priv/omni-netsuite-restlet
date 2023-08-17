@@ -161,7 +161,7 @@ async function createARFailedRecords(
 
    
     const query = `INSERT INTO ${dbname}interface_ar_api_logs (${tableStr}) VALUES (${valueStr});`;
-    console.log("query",query);
+    console.info("query",query);
     await connections.execute(query);
 
   } catch (error) {
@@ -242,7 +242,7 @@ async function createIntercompanyFailedRecords(connections, item, error) {
       file_nbr: item.file_nbr,
       ar_internal_id: item.ar_internal_id,
       ap_internal_id: item.ap_internal_id,
-      error_msg: error.data.error.message,
+      error_msg: error.data.message ?? "Intercomapny API Failed",
       is_report_sent: "N",
       current_dt: moment().format("YYYY-MM-DD"),
     };
@@ -259,9 +259,10 @@ async function createIntercompanyFailedRecords(connections, item, error) {
     tableStr = objKyes.join(",");
 
     const query = `INSERT INTO ${dbname}interface_intercompany_api_logs (${tableStr}) VALUES (${valueStr});`;
+    console.info("query",query);
     await connections.query(query);
   } catch (error) {
-    console.info("createIntercompanyFailedRecords:error", error);
+    console.error("createIntercompanyFailedRecords:error", error);
   }
 }
 
