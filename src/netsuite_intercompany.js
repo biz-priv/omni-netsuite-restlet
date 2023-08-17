@@ -47,30 +47,29 @@ module.exports.handler = async (event, context, callback) => {
      * Get invoice internal ids from ${apDbName} and ${arDbName}
      */
     const invoiceData = await getData(connections);
-    console.log("invoiceData", invoiceData.length);
+    console.info("invoiceData", invoiceData.length);
     currentCount = invoiceData.length;
 
     for (let i = 0; i < invoiceData.length; i++) {
       const item = invoiceData[i];
-      console.log("item", item);
       await mainProcess(connections, item);
-      console.log("count", i + 1);
+      console.info("count", i + 1);
     }
 
     if (currentCount > totalCountPerLoop) {
       hasMoreData = "true";
     } else {
       await triggerReportLambda(
-        process.env.NETSUIT_INVOICE_REPORT,
+        process.env.NS_RESTLET_INVOICE_REPORT,
         "CW_INTERCOMPANY"
       );
       hasMoreData = "false";
     }
     return { hasMoreData };
   } catch (error) {
-    console.log("error:handler", error);
+    console.error("error:handler", error);
     await triggerReportLambda(
-      process.env.NETSUIT_INVOICE_REPORT,
+      process.env.NS_RESTLET_INVOICE_REPORT,
       "CW_INTERCOMPANY"
     );
     return { hasMoreData: "false" };
@@ -102,13 +101,15 @@ async function getData(connections) {
     and ar.invoice_type = ap.invoice_type
     and ar.unique_ref_nbr = ap.unique_ref_nbr
     limit ${totalCountPerLoop + 1}`;
-    const result = await connections.query(query);
+    console.info("query",query);
+    const [rows] = await connections.execute(query);
+    const result = rows
     if (!result || result.length == 0) {
       throw "No data found.";
     }
     return result;
   } catch (error) {
-    console.log("error:getData", error);
+    console.error("error:getData", error);
     throw "No data found.";
   }
 }
@@ -120,19 +121,19 @@ async function getData(connections) {
  */
 async function updateAPandAr(connections, item, processed = "P") {
   try {
-    console.log(
+    console.info(
       "updateAPandAr",
       "AP " + item.ap_internal_id,
       "AR " + item.ar_internal_id,
       processed
     );
     const query1 = `
-                UPDATE ${apMasterDbName} set 
+                UPDATE ${apDbName} set 
                 intercompany_processed = '${processed}', 
                 intercompany_processed_date = '${today}'
                 where internal_id = '${item.ap_internal_id}' and source_system = '${source_system}';
                 `;
-    console.log("query1", query1);
+    console.info("query1", query1);
     await connections.query(query1);
     const query2 = `
                 UPDATE ${arDbName} set 
@@ -140,10 +141,10 @@ async function updateAPandAr(connections, item, processed = "P") {
                 intercompany_processed_date = '${today}'
                 where internal_id = '${item.ar_internal_id}' and source_system = '${source_system}';
               `;
-    console.log("query2", query2);
+    console.info("query2", query2);
     await connections.query(query2);
   } catch (error) {
-    console.log("error:updateAPandAr", error);
+    console.error("error:updateAPandAr", error);
     await sendDevNotification(
       "INVOICE-INTERCOMPANY",
       "CW",
@@ -159,7 +160,7 @@ async function mainProcess(connections, item) {
     await createInterCompanyInvoice(item);
     await updateAPandAr(connections, item);
   } catch (error) {
-    console.log("error:mainProcess", error);
+    console.error("error:mainProcess", error);
     if (error.hasOwnProperty("customError")) {
       await updateAPandAr(connections, item, "F");
       await createIntercompanyFailedRecords(connections, item, error);
@@ -189,7 +190,7 @@ async function createInterCompanyInvoice(item) {
       "Content-Type": "application/json",
     };
     const res = await axios.get(url, { headers });
-    if (res.data == "success") {
+    if (res.data.status == "Success") {
       return true;
     } else {
       throw {
@@ -197,7 +198,7 @@ async function createInterCompanyInvoice(item) {
       };
     }
   } catch (error) {
-    console.log("error:createInterCompanyInvoice", error);
+    console.error("error:createInterCompanyInvoice", error);
     throw {
       customError: true,
       arInvoiceId,
@@ -246,35 +247,31 @@ function getCustomDate() {
 }
 
 async function checkOldProcessIsRunning() {
-  return new Promise((resolve, reject) => {
-    try {
-      //intercompant arn
-      const intercompany = process.env.NETSUITE_INTERCOMPANY_ARN;
-      const status = "RUNNING";
-      const stepfunctions = new AWS.StepFunctions();
-      stepfunctions.listExecutions(
-        {
-          stateMachineArn: intercompany,
-          statusFilter: status,
-          maxResults: 2,
-        },
-        (err, data) => {
-          console.log(" Intercompany listExecutions data", data);
-          const venExcList = data.executions;
-          if (
-            err === null &&
-            venExcList.length == 2 &&
-            venExcList[1].status === status
-          ) {
-            console.log("Intercompany running");
-            resolve(true);
-          } else {
-            resolve(false);
-          }
-        }
-      );
-    } catch (error) {
-      resolve(true);
+  try {
+    const intercompanyArn = process.env.NETSUITE_INTERCOMPANY_ARN;
+    const status = "RUNNING";
+    const stepfunctions = new AWS.StepFunctions();
+
+    const data = await stepfunctions.listExecutions({
+      stateMachineArn: intercompanyArn,
+      statusFilter: status,
+      maxResults: 2,
+    }).promise();
+
+    console.info("Intercompany listExecutions data", data);
+    const intercomExcList = data.executions;
+
+    if (
+      data &&
+      intercomExcList.length === 2 &&
+      intercomExcList[1].status === status
+    ) {
+      console.info("Intercompany running");
+      return true;
+    } else {
+      return false;
     }
-  });
+  } catch (error) {
+    return true;
+  }
 }

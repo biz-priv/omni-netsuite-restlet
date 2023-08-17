@@ -1,13 +1,13 @@
 ---
 stateMachine:
-  name: ${self:service}-intercompany-state-machine-${self:provider.stage}
+  name: ${self:service}-intercompany-cw-state-machine-${self:provider.stage}
   definition:
     Comment: "State machine to update netsuite intercompany invoices"
     StartAt: PublishEvents
     States:
       PublishEvents:
         Type: Task
-        Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-intercompany-${self:provider.stage}"
+        Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-intercompany-cw-${self:provider.stage}"
         Next: EndChoice
       EndChoice:
         Type: Choice

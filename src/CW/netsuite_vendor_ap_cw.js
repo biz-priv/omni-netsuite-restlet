@@ -22,7 +22,7 @@ module.exports.handler = async (event, context, callback) => {
   const checkIsRunning = await checkOldProcessIsRunning();
   if (checkIsRunning) {
     return {
-      hasMoreData: "false",
+      hasMoreData: "running",
     };
   }
   let hasMoreData = "false";
@@ -51,12 +51,12 @@ module.exports.handler = async (event, context, callback) => {
          * get vendor from netsuit
          */
         const vendorData = await getVendor(vendor_id);
-        console.log("vendorData", vendorData);
-       
+        console.info("vendorData", vendorData);
+
         /**
          * Update vendor details into DB
          */
-       
+
         await putVendor(connections, vendorData, vendor_id);
         console.info("count", i + 1);
       } catch (error) {
@@ -105,7 +105,7 @@ module.exports.handler = async (event, context, callback) => {
 
 async function getVendorData(connections) {
   try {
-    const query =`SELECT distinct vendor_id FROM  ${apDbName}
+    const query = `SELECT distinct vendor_id FROM  ${apDbName}
                     where ((vendor_internal_id is NULL  and processed_date is null) or
                             (vendor_internal_id is null and processed_date < '${today}'))
                           and source_system = '${source_system}' order by vendor_id 
@@ -140,40 +140,7 @@ async function getDataByVendorId(connections, vendor_id) {
   }
 }
 
-// function getVendor(entityId) {
-//   return new Promise((resolve, reject) => {
-//     const NsApi = new NsApiWrapper({
-//       consumer_key: userConfig.token.consumer_key,
-//       consumer_secret_key: userConfig.token.consumer_secret,
-//       token: userConfig.token.token_key,
-//       token_secret: userConfig.token.token_secret,
-//       realm: userConfig.account,
-//     });
-    
-//     NsApi.request({
-//       path: `record/v1/vendor/eid:${entityId}`,
-//     })
-//       .then((response) => {
-//         const recordList = response.data;
-//         if (recordList && recordList.id) {
-//           const record = recordList;
-//           resolve(record);
-//         } else {
-//           reject({
-//             customError: true,
-//             msg: `Vendor not found. (vendor_id: ${entityId})`,
-//           });
-//         }
-//       })
-//       .catch((err) => {
-//         console.log("err", err);
-//         reject({
-//           customError: true,
-//           msg: `Vendor not found. (vendor_id: ${entityId})`,
-//         });
-//       });
-//   });
-// }
+
 
 async function getVendor(entityId) {
   try {
@@ -183,10 +150,10 @@ async function getVendor(entityId) {
       token: userConfig.token.token_key,
       token_secret: userConfig.token.token_secret,
       realm: userConfig.account,
-      url: `${process.env.NS_CUSTOMER_URL}&deploy=2&custscript_mfc_entity_eid=${entityId}`,
+      url: `${process.env.NS_BASE_URL}&deploy=2&custscript_mfc_entity_eid=${entityId}`,
       method: "GET",
     };
-    const authHeader =  getAuthorizationHeader(options);
+    const authHeader = getAuthorizationHeader(options);
 
     const configApi = {
       method: options.method,
@@ -196,74 +163,77 @@ async function getVendor(entityId) {
         ...authHeader,
       },
     };
-    const response =  await axios.request(configApi);
+    const response = await axios.request(configApi);
     console.info("response", response.status);
-    const recordList = response.data[0];  
-    if (recordList && recordList.internalid) {
+    const recordList = response.data[0];
+    if (recordList && recordList.internalid_value) {
       const record = recordList;
       return record;
     } else {
       throw {
         customError: true,
         msg: `Vendor not found. (vendor_id: ${entityId})`,
+        response: response
       };
     }
   } catch (err) {
     console.error("error", err);
-    throw {
-      customError: true,
-      msg: `Vendor not found. (vendor_id: ${entityId})`,
-    };
+    if (err.response.status == 200) {
+      throw {
+        customError: true,
+        msg: `Vendor not found. (vendor_id: ${entityId})`,
+      };
+    } else {
+      throw {
+        customError: true,
+        msg: "Vendor API Failed",
+      };
+    }
   }
 }
 
 async function putVendor(connections, vendorData, vendor_id) {
   try {
-    const vendor_internal_id = vendorData.internalid;
-    console.log("vendor_internal_id",vendor_internal_id);
-    
-    
+    const vendor_internal_id = vendorData.internalid_value;
+    console.info("vendor_internal_id", vendor_internal_id);
+
     const formatData = {
-      vendor_internal_id: vendorData?.internalid ?? "",
-      vendor_id: vendorData?.entityid ?? "",
-      externalId: vendorData?.externalid,
-      balance: vendorData?.balance,
-      // balancePrimary: vendorData?.balancePrimary,
-      companyName: vendorData?.companyname,
-      // currency_internal_id: vendorData?.currency.id,
-      curr_cd: vendorData?.currency,
-      // currency_id: vendorData?.currency.id,
-      currency_refName: vendorData?.currency,
-      custentity_1099_misc: vendorData?.custentity_1099_misc,
+      vendor_internal_id: vendorData?.internalid_value ?? "",
+      vendor_id: vendorData?.entityid_value ?? "",
+      externalId: vendorData?.externalId_value,
+      balancePrimary: vendorData?.balancePrimary_value,
+      companyName:
+        vendorData?.companyName_value.length > 0
+          ? vendorData?.companyName_value?.replace(/'/g, "`")
+          : "",
+      currency_internal_id: vendorData?.currency_internal_id_value,
+      curr_cd: vendorData?.currency_internal_id_text,
+      currency_id: vendorData?.currency_internal_id_value,
+      currency_refName: vendorData?.currency_internal_id_text,
+      custentity_1099_misc: vendorData?.custentity_1099_misc_value,
       custentity_11724_pay_bank_fees:
-        vendorData?.custentity_11724_pay_bank_fees,
+        vendorData?.custentity_11724_pay_bank_fees_value,
       custentity_2663_payment_method:
-        vendorData?.custentity_2663_payment_method,
-      // custentity_riv_external_id: vendorData?.custentity_riv_external_id,
-      dateCreated: vendorData?.datecreated,
-      defaultAddress: vendorData?.address,
-      emailTransactions: vendorData?.emailtransactions,
-      faxTransactions: vendorData?.faxtransactions,
-      // isAutogeneratedRepresentingEntity:
-      //   vendorData?.isAutogeneratedRepresentingEntity,
-      isInactive: vendorData?.isinactive,
-      isJobResourceVend: vendorData?.isjobresourcevend,
-      isPerson: vendorData?.isperson,
-      lastModifiedDate: vendorData?.lastmodifieddate,
-      legalName: vendorData?.legalname,
-      phone: vendorData?.phone,
-      printTransactions: vendorData?.printtransactions,
-      // subsidiaryEdition: vendorData?.subsidiaryEdition,
-      unbilledOrders: vendorData?.unbilledorders,
-      // unbilledOrdersPrimary: vendorData?.unbilledOrdersPrimary,
-
-      // customForm_id: vendorData?.customForm.id,
-      // customForm_refName: vendorData?.customForm.refName,
-      // emailPreference_id: vendorData?.emailPreference.id,
-      emailPreference_refName: vendorData?.emailpreference,
-      // subsidiary_id: vendorData?.subsidiary.id,
-      subsidiary_refName: vendorData?.subsidiary,
-
+        vendorData?.custentity_2663_payment_method_value,
+      dateCreated: vendorData?.dateCreated_value,
+      defaultAddress:
+        vendorData?.defaultAddress_value.length > 0
+          ? vendorData?.defaultAddress_value?.replace(/'/g, "`")
+          : "",
+      emailTransactions: vendorData?.emailTransactions_value,
+      faxTransactions: vendorData?.faxTransactions_value,
+      isInactive: vendorData?.isInactive_value,
+      isJobResourceVend: vendorData?.isJobResourceVend_value,
+      isPerson: vendorData?.isPerson_value,
+      lastModifiedDate: vendorData?.lastModifiedDate_value,
+      legalName: vendorData?.legalName_value?.replace(/'/g, "`"),
+      phone: vendorData?.phone_value,
+      printTransactions: vendorData?.printTransactions_value,
+      unbilledOrders: vendorData?.unbilledOrdersPrimary_value,
+      emailPreference_id: vendorData?.emailPreference_id_value,
+      emailPreference_refName: vendorData?.emailPreference_id_text,
+      subsidiary_id: vendorData?.subsidiary_id_value,
+      subsidiary_refName: vendorData?.subsidiary_id_text,
       created_at: moment().format("YYYY-MM-DD"),
     };
 
@@ -284,14 +254,11 @@ async function putVendor(connections, vendorData, vendor_id) {
     });
     tableStr = objKyes.join(",");
 
-    // console.log("tableStr", tableStr);
-    // console.log("valueStr", valueStr);
-    // console.log("updateStr", updateStr);
 
     const upsertQuery = `INSERT INTO ${apDbNamePrev}netsuit_vendors (${tableStr})
                         VALUES (${valueStr}) ON DUPLICATE KEY
                         UPDATE ${updateStr};`;
-    console.log("query", upsertQuery);
+    console.info("query", upsertQuery);
     await connections.execute(upsertQuery);
 
     const updateQuery = `UPDATE  ${apDbName} SET
@@ -299,10 +266,10 @@ async function putVendor(connections, vendorData, vendor_id) {
                     vendor_internal_id = '${vendor_internal_id}', 
                     processed_date = '${today}' 
                     WHERE vendor_id = '${vendor_id}' and source_system = '${source_system}' and vendor_internal_id is null;`;
-    console.log("updateQuery", updateQuery);
+    console.info("updateQuery", updateQuery);
     await connections.execute(updateQuery);
   } catch (error) {
-    console.log(error);
+    console.error(error);
     throw "Vendor Update Failed";
   }
 }
@@ -315,7 +282,7 @@ async function updateFailedRecords(connections, vendor_id) {
                   WHERE vendor_id = '${vendor_id}' and source_system = '${source_system}' and vendor_internal_id is null`;
     const result = await connections.query(query);
     return result;
-  } catch (error) {}
+  } catch (error) { }
 }
 
 function getCustomDate() {
@@ -330,39 +297,29 @@ function getCustomDate() {
 
 async function checkOldProcessIsRunning() {
   try {
-    //cw ar 
-    const customerArn = process.env.NETSUITE_AP_CW_VENDOR_STEP_ARN;
-    
-
+    const vendorArn = process.env.NETSUITE_AP_CW_VENDOR_STEP_ARN;
     const status = "RUNNING";
     const stepfunctions = new AWS.StepFunctions();
 
-    const getExecutionList = async (stateMachineArn) => {
-      return new Promise((resolve, reject) => {
-        stepfunctions.listExecutions(
-          {
-            stateMachineArn,
-            statusFilter: status,
-            maxResults: 2,
-          },
-          (err, data) => {
-            if (err) {
-              reject(err);
-            } else {
-              resolve(data.executions);
-            }
-          }
-        );
-      });
-    };
+    const data = await stepfunctions.listExecutions({
+      stateMachineArn: vendorArn,
+      statusFilter: status,
+      maxResults: 2,
+    }).promise();
 
-    const customerExcList = await getExecutionList(customerArn);
-    if (customerExcList.length === 2 && customerExcList[1].status === status) {
-      console.log("AP running");
+    console.info("AP listExecutions data", data);
+    const venExcList = data.executions;
+
+    if (
+      data &&
+      venExcList.length === 2 &&
+      venExcList[1].status === status
+    ) {
+      console.info("AP running");
       return true;
+    } else {
+      return false;
     }
-
-    return false;
   } catch (error) {
     return true;
   }
