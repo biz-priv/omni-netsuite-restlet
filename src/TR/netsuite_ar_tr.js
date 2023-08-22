@@ -39,7 +39,7 @@ module.exports.handler = async (event, context, callback) => {
      */
     const orderData = await getDataGroupBy(connections);
 
-    console.info("orderData", orderData.length, orderData[0]);
+    console.info("orderData", orderData.length);
     const invoiceIDs = orderData.map((a) => "'" + a.invoice_nbr + "'");
     console.info("invoiceIDs", invoiceIDs);
 
@@ -116,7 +116,7 @@ async function mainProcess(item, invoiceDataList) {
      * create Netsuit Invoice
      */
     const invoiceId = await createInvoice(jsonPayload, singleItem);
-    console.log("invoiceId", invoiceId);
+    console.info("invoiceId", invoiceId);
 
     /**
      * update invoice id
@@ -226,7 +226,9 @@ async function makeJsonPayload(data) {
       custbody9: singleItem.housebill_nbr ?? "",//1730 //here in soap we are passing file_nbr
       custbody17: singleItem.email ?? "",//1744
       custbody25: singleItem.zip_code ?? "",//2698
-      custbody19: singleItem.unique_ref_nbr ?? "",//1734
+      // custbody19: singleItem.unique_ref_nbr ?? "",//1734
+      custbody19: singleItem.ee_invoice ?? "",//1735
+      memo:singleItem.housebill_nbr ?? "",
       item: data.map((e) => {
         return {
           // custcol_mfc_line_unique_key:"",

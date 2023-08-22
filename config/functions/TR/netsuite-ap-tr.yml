@@ -10,7 +10,7 @@ function:
   timeout: 900
   package:
     include:
-      - src/CW/netsuite_ap_tr.js
+      - src/TR/netsuite_ap_tr.js
       - Helpers/**
   environment:
     NETSUITE_INTERCOMPANY_STEP_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-intercompany-state-machine-${self:provider.stage}

@@ -31,7 +31,7 @@ let queryVendorId = null;
 module.exports.handler = async (event, context, callback) => {
   userConfig = getConfig(source_system, process.env);
 
-  console.log("event", event);
+  console.info("event", event);
   let currentCount = 0;
   totalCountPerLoop = event.hasOwnProperty("totalCountPerLoop")
     ? event.totalCountPerLoop
@@ -69,11 +69,11 @@ module.exports.handler = async (event, context, callback) => {
      */
     if (queryOperator == ">") {
       // Update 500 line items per process
-      console.log("> start");
+      console.info("> start");
 
       totalCountPerLoop = 0;
       if (queryInvoiceId != null && queryInvoiceId.toString().length > 0) {
-        console.log(">if");
+        console.info(">if");
 
         try {
           const invoiceDataList = await getInvoiceNbrData(
@@ -88,7 +88,7 @@ module.exports.handler = async (event, context, callback) => {
               invoiceDataList
             );
           } catch (error) {
-            console.log("work later");
+            console.info("work later");
           }
 
           if (lineItemPerProcess >= invoiceDataList.length) {
@@ -111,14 +111,14 @@ module.exports.handler = async (event, context, callback) => {
           };
         }
       } else {
-        console.log("> else");
+        console.info("> else");
 
         try {
           let invoiceDataList = [];
           let orderData = [];
           try {
             orderData = await getDataGroupBy(connections);
-            console.log("orderData", orderData.length);
+            console.info("orderData", orderData.length);
           } catch (error) {
             await triggerReportLambda(
               process.env.NS_RESTLET_INVOICE_REPORT,
@@ -136,12 +136,11 @@ module.exports.handler = async (event, context, callback) => {
             queryInvoiceNbr,
             true
           );
-          console.log("invoiceDataList", invoiceDataList.length);
+          console.info("invoiceDataList", invoiceDataList.length);
           /**
            * set queryInvoiceId in this process and return update query
            */
           const queryData = await mainProcess(orderData[0], invoiceDataList);
-          // console.log("queryData", queryData);
           await updateInvoiceId(connections, [queryData]);
 
           /**
@@ -152,10 +151,10 @@ module.exports.handler = async (event, context, callback) => {
             invoiceDataList.length <= lineItemPerProcess ||
             queryInvoiceId == null
           ) {
-            console.log("next invoice");
+            console.info("next invoice");
             throw "Next Invoice";
           } else {
-            console.log("next exec", {
+            console.info("next exec", {
               hasMoreData: "true",
               queryOperator,
               queryOffset: queryOffset + lineItemPerProcess + 1,
@@ -176,7 +175,7 @@ module.exports.handler = async (event, context, callback) => {
             };
           }
         } catch (error) {
-          console.log("error", error);
+          console.info("error", error);
           return {
             hasMoreData: "true",
             queryOperator,
@@ -202,17 +201,17 @@ module.exports.handler = async (event, context, callback) => {
 
       try {
         invoiceIDs = orderData.map((a) => "'" + a.invoice_nbr + "'");
-        console.log("orderData**", orderData.length, orderData);
-        console.log("invoiceIDs", invoiceIDs);
+        console.info("orderData**", orderData.length, orderData);
+        console.info("invoiceIDs", invoiceIDs);
         if (orderData.length === 1) {
-          console.log("length==1", orderData);
+          console.info("length==1", orderData);
         }
         currentCount = orderData.length;
         invoiceDataList = await getInvoiceNbrData(connections, invoiceIDs);
-        console.log("invoiceDataList", invoiceDataList.length);
+        console.info("invoiceDataList", invoiceDataList.length);
       } catch (error) {
-        console.log("error:getInvoiceNbrData:try:catch", error);
-        console.log(
+        console.error("error:getInvoiceNbrData:try:catch", error);
+        console.error(
           "invoiceIDs:try:catch found on getDataGroupBy but not in getInvoiceNbrData",
           invoiceIDs
         );
@@ -290,7 +289,7 @@ async function mainProcess(item, invoiceDataList) {
      * create invoice
      */
     const invoiceId = await createInvoice(jsonPayload, singleItem);
-    console.log("invoiceId",invoiceId);
+    console.info("invoiceId",invoiceId);
 
     if (queryOperator == ">") {
       queryInvoiceId = invoiceId.toString();
@@ -302,7 +301,7 @@ async function mainProcess(item, invoiceDataList) {
     const getQuery = getUpdateQuery(singleItem, invoiceId);
     return getQuery;
   } catch (error) {
-    console.log("mainprocess:error",error);
+    console.error("mainprocess:error",error);
     if (error.hasOwnProperty("customError")) {
       let getQuery = "";
       try {
@@ -348,7 +347,7 @@ async function getDataGroupBy(connections) {
     having tc ${queryOperator} ${lineItemPerProcess} 
     limit ${totalCountPerLoop + 1}`;
 
-    console.log("query", query);
+    console.info("query", query);
     const [rows] = await connections.execute(query);
     const result = rows;
     if (!result || result.length == 0) {
@@ -418,6 +417,7 @@ async function makeJsonPayload(data) {
       custbody_omni_po_hawb: singleItem.housebill_nbr ?? "",//1748  //need to check on 1756 internal id with priyanka
       custbody_mode: singleItem?.mode_name ?? "",//2673
       custbody_service_level: singleItem?.service_level ?? "",//2674
+      
       item: data.map((e) => {
         return {
           // custcol_mfc_line_unique_key:"",
@@ -452,7 +452,7 @@ async function makeJsonPayload(data) {
 
     return payload;
   } catch (error) {
-    console.log("error payload", error);
+    console.error("error payload", error);
     await sendDevNotification(
       source_system,
       "AP",
@@ -802,10 +802,10 @@ async function startNextStep() {
     const data = await new Promise((resolve, reject) => {
       stepfunctions.startExecution(params, (err, data) => {
         if (err) {
-          console.log("Netsuit NETSUITE_INTERCOMPANY_STEP_ARN trigger failed");
+          console.error("Netsuit NETSUITE_INTERCOMPANY_STEP_ARN trigger failed");
           reject(err);
         } else {
-          console.log("Netsuit NETSUITE_INTERCOMPANY_STEP_ARN started");
+          console.info("Netsuit NETSUITE_INTERCOMPANY_STEP_ARN started");
           resolve(data);
         }
       });
