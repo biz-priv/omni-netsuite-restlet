@@ -16,7 +16,7 @@ let connections = "";
 
 const apDbNamePrev = process.env.DATABASE_NAME;
 const apDbName = apDbNamePrev + "interface_ap";
-const source_system = "M1";
+const source_system = "TR";
 
 const today = getCustomDate();
 const lineItemPerProcess = 500;
@@ -31,7 +31,7 @@ let queryVendorId = null;
 module.exports.handler = async (event, context, callback) => {
   userConfig = getConfig(source_system, process.env);
 
-  console.log("event", event);
+  console.info("event", event);
   let currentCount = 0;
   totalCountPerLoop = event.hasOwnProperty("totalCountPerLoop")
     ? event.totalCountPerLoop
@@ -69,11 +69,11 @@ module.exports.handler = async (event, context, callback) => {
      */
     if (queryOperator == ">") {
       // Update 500 line items per process
-      console.log("> start");
+      console.info("> start");
 
       totalCountPerLoop = 0;
       if (queryInvoiceId != null && queryInvoiceId.toString().length > 0) {
-        console.log(">if");
+        console.info(">if");
 
         try {
           const invoiceDataList = await getInvoiceNbrData(
@@ -88,7 +88,7 @@ module.exports.handler = async (event, context, callback) => {
               invoiceDataList
             );
           } catch (error) {
-            console.log("work later");
+            console.info("work later");
           }
 
           if (lineItemPerProcess >= invoiceDataList.length) {
@@ -111,19 +111,20 @@ module.exports.handler = async (event, context, callback) => {
           };
         }
       } else {
-        console.log("> else");
+        console.info("> else");
 
         try {
           let invoiceDataList = [];
           let orderData = [];
           try {
             orderData = await getDataGroupBy(connections);
-            console.log("orderData", orderData.length);
+            console.info("orderData", orderData.length);
           } catch (error) {
             await triggerReportLambda(
               process.env.NS_RESTLET_INVOICE_REPORT,
-              "M1_AP"
+              "TR_AP"
             );
+            await startNextStep();
             return { hasMoreData: "false" };
           }
           queryInvoiceNbr = orderData[0].invoice_nbr;
@@ -135,7 +136,7 @@ module.exports.handler = async (event, context, callback) => {
             queryInvoiceNbr,
             true
           );
-          console.log("invoiceDataList", invoiceDataList.length);
+          console.info("invoiceDataList", invoiceDataList.length);
           /**
            * set queryInvoiceId in this process and return update query
            */
@@ -150,10 +151,10 @@ module.exports.handler = async (event, context, callback) => {
             invoiceDataList.length <= lineItemPerProcess ||
             queryInvoiceId == null
           ) {
-            console.log("next invoice");
+            console.info("next invoice");
             throw "Next Invoice";
           } else {
-            console.log("next exec", {
+            console.info("next exec", {
               hasMoreData: "true",
               queryOperator,
               queryOffset: queryOffset + lineItemPerProcess + 1,
@@ -174,7 +175,7 @@ module.exports.handler = async (event, context, callback) => {
             };
           }
         } catch (error) {
-          console.log("error", error);
+          console.info("error", error);
           return {
             hasMoreData: "true",
             queryOperator,
@@ -200,17 +201,17 @@ module.exports.handler = async (event, context, callback) => {
 
       try {
         invoiceIDs = orderData.map((a) => "'" + a.invoice_nbr + "'");
-        console.log("orderData**", orderData.length, orderData);
-        console.log("invoiceIDs", invoiceIDs);
+        console.info("orderData**", orderData.length, orderData);
+        console.info("invoiceIDs", invoiceIDs);
         if (orderData.length === 1) {
-          console.log("length==1", orderData);
+          console.info("length==1", orderData);
         }
         currentCount = orderData.length;
         invoiceDataList = await getInvoiceNbrData(connections, invoiceIDs);
-        console.log("invoiceDataList", invoiceDataList.length);
+        console.info("invoiceDataList", invoiceDataList.length);
       } catch (error) {
-        console.log("error:getInvoiceNbrData:try:catch", error);
-        console.log(
+        console.error("error:getInvoiceNbrData:try:catch", error);
+        console.error(
           "invoiceIDs:try:catch found on getDataGroupBy but not in getInvoiceNbrData",
           invoiceIDs
         );
@@ -248,8 +249,9 @@ module.exports.handler = async (event, context, callback) => {
       return { hasMoreData: "true", queryOperator };
     }
   } catch (error) {
-    console.log("error", error);
-    await triggerReportLambda(process.env.NETSUIT_INVOICE_REPORT, "M1_AP");
+    console.error("error", error);
+    await triggerReportLambda(process.env.NS_RESTLET_INVOICE_REPORT, "TR_AP");
+    await startNextStep();
     return { hasMoreData: "false" };
   }
 };
@@ -269,10 +271,10 @@ async function mainProcess(item, invoiceDataList) {
       return (
         e.invoice_nbr == item.invoice_nbr &&
         e.vendor_id == item.vendor_id &&
-        e.invoice_type == item.invoice_type 
+        e.invoice_type == item.invoice_type &&
+        e.gc_code == item.gc_code
       );
     });
-    console.log("dataList", dataList.length);
 
     /**
      * set single item and customer data
@@ -283,12 +285,11 @@ async function mainProcess(item, invoiceDataList) {
      * Make Json payload
      */
     const jsonPayload = await makeJsonPayload(dataList);
-
     /**
      * create invoice
      */
     const invoiceId = await createInvoice(jsonPayload, singleItem);
-    console.log("invoiceId",invoiceId);
+    console.info("invoiceId",invoiceId);
 
     if (queryOperator == ">") {
       queryInvoiceId = invoiceId.toString();
@@ -300,7 +301,7 @@ async function mainProcess(item, invoiceDataList) {
     const getQuery = getUpdateQuery(singleItem, invoiceId);
     return getQuery;
   } catch (error) {
-    console.log("mainprocess:error",error);
+    console.error("mainprocess:error",error);
     if (error.hasOwnProperty("customError")) {
       let getQuery = "";
       try {
@@ -333,15 +334,20 @@ async function mainProcess(item, invoiceDataList) {
 async function getDataGroupBy(connections) {
   try {
 
-    const query =  `SELECT invoice_nbr, vendor_id, invoice_type, count(*) as tc FROM ${apDbName} 
+    const dateCheckOperator = "<";
+    const query = `SELECT invoice_nbr, vendor_id, invoice_type, count(*) as tc,gc_code
+    FROM dw_uat.interface_ap 
     WHERE  ((internal_id is null and processed is null and vendor_internal_id is not null) or
-    (vendor_internal_id is not null and processed ='F' and processed_date < '${today}'))
-    and source_system = '${source_system}' and invoice_nbr != ''
-    GROUP BY invoice_nbr, vendor_id, invoice_type
+    (vendor_internal_id is not null and processed ='F' and processed_date ${dateCheckOperator} '${today}')) and 
+    ((intercompany='Y' and pairing_available_flag ='Y') OR 
+      intercompany='N'
+    )
+    and source_system = '${source_system}' and invoice_nbr != '' and gc_code is not null 
+    GROUP BY invoice_nbr, vendor_id, invoice_type,gc_code 
     having tc ${queryOperator} ${lineItemPerProcess} 
     limit ${totalCountPerLoop + 1}`;
-    console.log("query", query,totalCountPerLoop);
 
+    console.info("query", query);
     const [rows] = await connections.execute(query);
     const result = rows;
     if (!result || result.length == 0) {
@@ -371,7 +377,7 @@ async function getInvoiceNbrData(connections, invoice_nbr, isBigData = false) {
     }
     return result;
   } catch (error) {
-    console.error("getInvoiceNbrData:error", error);
+    console.error("error1", error);
     throw "getInvoiceNbrData: No data found.";
   }
 }
@@ -379,17 +385,21 @@ async function getInvoiceNbrData(connections, invoice_nbr, isBigData = false) {
 async function makeJsonPayload(data) {
   try {
     const singleItem = data[0];
-    const hardcode = getHardcodeData();
+    const hardcode = getHardcodeData(
+      singleItem?.intercompany == "Y" ? true : false
+    );
     /**
      * head level details
      */
     const payload = {
       custbody_mfc_omni_unique_key:
-        singleItem.invoice_nbr +
-        "-" +
-        singleItem.vendor_id +
-        "-" +
-        singleItem.invoice_type, //invoice_nbr, vendor_id, invoice_type
+      singleItem.invoice_nbr +
+      "-" +
+      singleItem.vendor_id +
+      "-" +
+      singleItem.invoice_type+
+      "-"+
+      singleItem.gc_code, //invoice_nbr, vendor_id, invoice_type,gc_code
       entity: singleItem.vendor_internal_id ?? "",
       subsidiary: singleItem.subsidiary ?? "",
       trandate: singleItem.invoice_date
@@ -397,16 +407,18 @@ async function makeJsonPayload(data) {
         : "",
       tranid: singleItem.invoice_nbr ?? "",
       currency: singleItem.currency_internal_id ?? "",
-      otherrefnum: singleItem.customer_po ?? "",
       class: hardcode.class.head,
       department: hardcode.department.head,
       location: hardcode.location.head,
-      custbody9: singleItem.file_nbr ?? "",
-      custbody17: singleItem.email ?? "",
-      custbody_source_system: hardcode.source_system,
-      custbody_omni_po_hawb: singleItem.housebill_nbr ?? "",
-      custbody_mode: singleItem?.mode_name ?? "",
-      custbody_service_level: singleItem?.service_level ?? "",
+      otherRefNum: singleItem.customer_po ?? "",
+      custbody9: singleItem.file_nbr ?? "",//1730
+      custbody17: singleItem.email ?? "",//1744
+      custbody_source_system: hardcode.source_system,//2327
+      custbody_omni_po_hawb: singleItem.housebill_nbr ?? "",//1748  //need to check on 1756 internal id with priyanka
+      custbody_mode: singleItem?.mode_name ?? "",//2673
+      custbody_service_level: singleItem?.service_level ?? "",//2674
+      memo:singleItem.housebill_nbr ?? "",
+      
       item: data.map((e) => {
         return {
           // custcol_mfc_line_unique_key:"",
@@ -423,15 +435,15 @@ async function makeJsonPayload(data) {
           location: {
             refName: e.handling_stn ?? "",
           },
-          custcol_hawb: e.housebill_nbr ?? "",
-          custcol3: e.sales_person ?? "",
-          custcol5: e.master_bill_nbr ?? "",
+          custcol_hawb: e.housebill_nbr ?? "",//760
+          custcol3: e.sales_person ?? "",//1167
+          custcol5: e.master_bill_nbr ?? "",//1727
           custcol2: {
-            refName: e.controlling_stn ?? "",
+            refName: e.controlling_stn ?? "",//1166
           },
-          custcol4: e.ref_nbr ?? "",
-          custcol_riv_consol_nbr: e.consol_nbr ?? "",
-          custcol_finalizedby: e.finalizedby ?? "", //prod:-2614  dev:-2511
+          custcol4: e.ref_nbr ?? "",//1168
+          custcol_riv_consol_nbr: e.consol_nbr ?? "",////prod:- 2510 dev:- 2506
+          custcol_finalizedby: e.finalizedby ?? "",//2614
         };
       }),
     };
@@ -445,7 +457,7 @@ async function makeJsonPayload(data) {
     await sendDevNotification(
       source_system,
       "AP",
-      "netsuite_ap_wt payload error",
+      "netsuite_ap_tr payload error",
       data[0],
       error
     );
@@ -485,6 +497,7 @@ function getAuthorizationHeader(options) {
     )
   );
 }
+
 
 
 async function createInvoice(payload, singleItem) {
@@ -587,11 +600,11 @@ async function makeLineItemsJsonPayload(invoiceId, data) {
     };
     return payload;
   } catch (error) {
-    console.log("error payload", error);
+    console.error("error payload", error);
     await sendDevNotification(
       source_system,
       "AP",
-      "netsuite_ap_m1 payload error",
+      "netsuite_ap_tr payload error",
       data[0],
       error
     );
@@ -622,10 +635,10 @@ async function createInvoiceAndUpdateLineItems(invoiceId, data) {
       method: 'PUT',
     };
 
-    const authHeader = await getAuthorizationHeader(options);
+    const authHeader =  getAuthorizationHeader(options);
 
     const payload = makeLineItemsJsonPayload(invoiceId, data);
-    console.log('payload', JSON.stringify(payload));
+    console.info('payload', JSON.stringify(payload));
 
     const configApi = {
       method: options.method,
@@ -637,12 +650,9 @@ async function createInvoiceAndUpdateLineItems(invoiceId, data) {
       },
       data: JSON.stringify(payload),
     };
-    console.log('configApi', configApi);
 
     const response = await axios.request(configApi);
 
-    console.log('response', response.status);
-    console.log(JSON.stringify(response.data));
 
     if (response.status === 200 && response.data.status === 'Success') {
       return response.data.id;
@@ -651,17 +661,17 @@ async function createInvoiceAndUpdateLineItems(invoiceId, data) {
         customError: true,
         msg: response.data.reason.replace(/'/g, '`'),
         payload: JSON.stringify(payload),
-        response: JSON.stringify(response.data).replace(/'/g, '`'),
+        response: response.data,
       };
     }
   } catch (error) {
     console.log('error:createInvoice:main:catch', error);
-   if (error.response) {
+    if (error?.response?.reason) {
       throw {
         customError: true,
         msg: error.msg.replace(/'/g, '`'),
         payload: error.payload,
-        response: error.response.replace(/'/g, '`'),
+        response: JSON.stringify(error.response).replace(/'/g, '`'),
       };
     } else {
       throw {
@@ -686,7 +696,7 @@ async function createInvoiceAndUpdateLineItems(invoiceId, data) {
  */
 function getUpdateQuery(item, invoiceId, isSuccess = true) {
   try {
-    console.log("invoice_nbr ", item.invoice_nbr, invoiceId);
+    console.info("invoice_nbr ", item.invoice_nbr, invoiceId);
     let query = `UPDATE ${apDbName} `;
     if (isSuccess) {
       query += ` SET internal_id = '${invoiceId}', processed = 'P', `;
@@ -714,15 +724,14 @@ function getUpdateQuery(item, invoiceId, isSuccess = true) {
 async function updateInvoiceId(connections, query) {
   for (let index = 0; index < query.length; index++) {
     const element = query[index];
-    console.log("element", element);
     try {
       await connections.execute(element);
     } catch (error) {
-      console.log("error:updateInvoiceId", error);
+      console.error("error:updateInvoiceId", error);
       await sendDevNotification(
         source_system,
         "AP",
-        "netsuite_ap_m1 updateInvoiceId",
+        "netsuite_ap_tr updateInvoiceId",
         "Invoice is created But failed to update internal_id " + element,
         error
       );
@@ -738,14 +747,14 @@ async function updateInvoiceId(connections, query) {
 
 function getHardcodeData(isIntercompany = false) {
   const data = {
-    source_system: "2",
+    source_system: "1",
     class: {
       head: "9",
       line: getBusinessSegment(process.env.STAGE),
     },
     department: {
       default: { head: "15", line: "2" },
-      intercompany: { head: "15", line: "1" },
+      intercompany: { head: "16", line: "2" },
     },
     location: { head: "18", line: "EXT ID: Take from DB" },
   };
@@ -780,3 +789,32 @@ function getCustomDate() {
   return `${ye}-${mo}-${da}`;
 }
 
+
+
+
+
+async function startNextStep() {
+  try {
+    const params = {
+      stateMachineArn: process.env.NETSUITE_INTERCOMPANY_STEP_ARN,
+      input: JSON.stringify({}),
+    };
+    const stepfunctions = new AWS.StepFunctions();
+    const data = await new Promise((resolve, reject) => {
+      stepfunctions.startExecution(params, (err, data) => {
+        if (err) {
+          console.error("Netsuit NETSUITE_INTERCOMPANY_STEP_ARN trigger failed");
+          reject(err);
+        } else {
+          console.info("Netsuit NETSUITE_INTERCOMPANY_STEP_ARN started");
+          resolve(data);
+        }
+      });
+    });
+
+    return true;
+  } catch (error) {
+    console.error("Error in startNextStep:", error);
+    return false;
+  }
+}

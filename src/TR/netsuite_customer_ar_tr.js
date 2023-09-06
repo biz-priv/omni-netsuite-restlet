@@ -16,14 +16,14 @@ const today = getCustomDate();
 
 const arDbNamePrev = process.env.DATABASE_NAME;
 const arDbName = arDbNamePrev + "interface_ar";
-const source_system = "M1";
+const source_system = "TR";
 
 module.exports.handler = async (event, context, callback) => {
   userConfig = getConfig(source_system, process.env);
   const checkIsRunning = await checkOldProcessIsRunning();
   if (checkIsRunning) {
     return {
-      hasMoreData: "running",
+      hasMoreData: "false",
     };
   }
   let hasMoreData = "false";
@@ -42,7 +42,6 @@ module.exports.handler = async (event, context, callback) => {
      */
     const customerList = await getCustomerData(connections);
     console.info("customerList", customerList);
-
     currentCount = customerList.length;
 
     for (let i = 0; i < customerList.length; i++) {
@@ -53,16 +52,16 @@ module.exports.handler = async (event, context, callback) => {
          * get customer from netsuit
          */
         const customerData = await getcustomer(customer_id);
-        console.info("customerData", customerData);
+        console.info("customerData", JSON.stringify(customerData));
         /**
          * Update customer details into DB
          */
+    
         await putCustomer(connections, customerData, customer_id);
         console.info("count", i + 1);
       } catch (error) {
         let singleItem = "";
         try {
-          console.log("err",error);
           if (error.hasOwnProperty("customError")) {
             /**
              * update error
@@ -77,11 +76,11 @@ module.exports.handler = async (event, context, callback) => {
             );
           }
         } catch (error) {
-          console.log("err", error);
+          console.error("err", error);
           await sendDevNotification(
             source_system,
             "AR",
-            "netsuite_customer_ar_m1 for loop customer_id" + customer_id,
+            "netsuite_customer_ar_tr for loop customer_id" + customer_id,
             singleItem,
             error
           );
@@ -108,10 +107,10 @@ module.exports.handler = async (event, context, callback) => {
 async function getCustomerData(connections) {
   try {
     const query = `SELECT distinct customer_id FROM ${arDbName} 
-    where ((customer_internal_id is null and processed_date is null) or
-          (customer_internal_id is null and processed_date < '${today}'))
-          and source_system = '${source_system}'
-          limit ${totalCountPerLoop + 1}`;
+                    where customer_internal_id is null and ( processed_date is null or
+                           processed_date < '${today}')
+                          and source_system = '${source_system}'
+                          limit ${totalCountPerLoop + 1}`;
 
     console.info("query", query);
     const [rows] = await connections.execute(query);
@@ -130,7 +129,7 @@ async function getDataByCustomerId(connections, cus_id) {
     const query = `SELECT * FROM ${arDbName} 
                     where source_system = '${source_system}' and customer_id = '${cus_id}' 
                     limit 1`;
-    console.log("query", query);
+    console.info("query", query);
     const [rows] = await connections.execute(query);
     const result = rows;
     if (!result || result.length == 0) {
@@ -164,11 +163,12 @@ async function getcustomer(entityId) {
       },
     };
 
-    const response = await axios.request(configApi);
+    
+    const response =  await axios.request(configApi);
+
     console.info("response", response.status);
 
     const recordList = response.data[0];
-    // console.log("recordList:",recordList);
     if (recordList && recordList.internal_id_value) {
       const record = recordList;
       return record;
@@ -199,6 +199,67 @@ async function putCustomer(connections, customerData, customer_id) {
   try {
     const customer_internal_id = customerData.internal_id_value;
 
+    // const formatData = {
+    //   customer_internal_id: customerData?.internalid ?? "",
+    //   customer_id: customerData?.entityid ?? "",
+    //   // currency_internal_id: customerData?.currency.id,
+    //   curr_cd: customerData?.currency,
+    //   // currency_id: customerData?.currency.id,
+    //   currency_refName: customerData?.currency,
+    //   externalId: customerData?.externalid ?? "",
+    //   custentity5: customerData?.custentity5 ?? "",
+    //   custentity_2663_customer_refund:
+    //     customerData?.custentity_2663_customer_refund ?? "",
+    //   custentity_2663_direct_debit:
+    //     customerData?.custentity_2663_direct_debit ?? "",
+    //   custentity_ee_account_no: customerData?.custentity_ee_account_no ?? "",
+    //   custentity_riv_assigned_collector:
+    //     customerData?.custentity_riv_assigned_collector ?? "",
+    //   dateCreated: customerData?.datecreated ?? "",
+    //   daysOverdue: customerData?.daysoverdue ?? "",
+    //   defaultAddress:
+    //     customerData?.address.length > 0
+    //       ? customerData?.address.replace(/'/g, "`")
+    //       : "",
+    //   depositBalance: customerData?.depositbalance ?? "",
+    //   // autoName: customerData?.autoName ?? "",
+    //   balance: customerData?.balance ?? "",
+    //   companyName:
+    //     customerData?.companyname.length > 0
+    //       ? customerData?.companyname.replace(/'/g, "`")
+    //       : "",
+    //   emailTransactions: customerData?.emailtransactions ?? "",
+    //   faxTransactions: customerData?.faxtransactions ?? "",
+    //   // isAutogeneratedRepresentingEntity:
+    //   //   customerData?.isAutogeneratedRepresentingEntity ?? "",
+    //   isInactive: customerData?.isinactive ?? "",
+    //   // isPerson: customerData?.isPerson ?? "",
+    //   lastModifiedDate: customerData?.lastmodifieddate ?? "",
+    //   overdueBalance: customerData?.overduebalance ?? "",
+    //   printTransactions: customerData?.printtransactions ?? "",
+    //   unbilledOrders: customerData?.unbilledorders ?? "",
+    //   shipComplete: customerData?.shipcomplete ?? "",
+
+    //   // alcoholRecipientType_id: customerData?.alcoholRecipientType.id,
+    //   // alcoholRecipientType_refName: customerData?.alcoholRecipientType.refName,
+    //   // creditHoldOverride_id: customerData?.creditHoldOverride.id,
+    //   creditHoldOverride_refName: customerData?.credithold,
+    //   // customForm_id: customerData?.customForm.id,
+    //   // customForm_refName: customerData?.customForm.refName,
+    //   // emailPreference_id: customerData?.emailPreference.id,
+    //   emailPreference_refName: customerData?.emailpreference,
+    //   // entityStatus_id: customerData?.entityStatus.id,
+    //   entityStatus_refName: customerData?.entitystatus,
+    //   // receivablesAccount_id: customerData?.receivablesAccount.id,
+    //   receivablesAccount_refName: customerData?.receivablesaccount,
+    //   // shippingCarrier_id: customerData?.shippingCarrier.id,
+    //   shippingCarrier_refName: customerData?.shippingcarrier,
+    //   // subsidiary_id: customerData?.subsidiary.id,
+    //   subsidiary_refName: customerData?.subsidiary,
+    //   // terms_id: customerData?.terms.id,
+    //   terms_refName: customerData?.terms,
+    //   created_at: moment().format("YYYY-MM-DD"),
+    // };
     const formatData = {
       customer_internal_id: customerData?.internal_id_value ?? "",
       customer_id: customerData?.entityId_value ?? "",
@@ -234,6 +295,7 @@ async function putCustomer(connections, customerData, customer_id) {
       printTransactions: customerData?.printTransactions_value ?? "",
       unbilledOrders: customerData?.unbilledOrders_value ?? "",
       shipComplete: customerData?.shipComplete_value ?? "",
+
       creditHoldOverride_id: customerData?.creditHoldOverride_id_value,
       creditHoldOverride_refName: customerData?.creditHoldOverride_id_text,
       emailPreference_id: customerData?.emailPreference_id_value,
@@ -271,7 +333,7 @@ async function putCustomer(connections, customerData, customer_id) {
     const upsertQuery = `INSERT INTO ${arDbNamePrev}netsuit_customer (${tableStr})
                         VALUES (${valueStr}) ON DUPLICATE KEY
                         UPDATE ${updateStr};`;
-    console.log("query", upsertQuery);
+    console.info("query", upsertQuery);
     await connections.execute(upsertQuery);
 
     const updateQuery = `UPDATE ${arDbName} SET 
@@ -279,7 +341,7 @@ async function putCustomer(connections, customerData, customer_id) {
                     customer_internal_id = '${customer_internal_id}', 
                     processed_date = '${today}' 
                     WHERE customer_id = '${customer_id}' and source_system = '${source_system}' and customer_internal_id is null`;
-    console.log("updateQuery", updateQuery);
+    console.info("updateQuery", updateQuery);
     await connections.execute(updateQuery);
   } catch (error) {
     console.error(error);
@@ -293,7 +355,7 @@ async function updateFailedRecords(connections, cus_id) {
                   SET processed = 'F',
                   processed_date = '${today}' 
                   WHERE customer_id = '${cus_id}' and source_system = '${source_system}' and customer_internal_id is null`;
-    console.log("query", query);
+    console.info("query", query);
     const result = await connections.execute(query);
     return result;
   } catch (error) { }
@@ -307,9 +369,50 @@ function getCustomDate() {
   return `${ye}-${mo}-${da}`;
 }
 
+
+
+// async function checkOldProcessIsRunning() {
+//   try {
+//     //tr ar 
+//     const customerArn = process.env.NETSUITE_AR_TR_CUSTOMER_STEP_ARN;
+
+//     const status = "RUNNING";
+//     const stepfunctions = new AWS.StepFunctions();
+
+//     const getExecutionList = async (stateMachineArn) => {
+//       return new Promise((resolve, reject) => {
+//         stepfunctions.listExecutions(
+//           {
+//             stateMachineArn,
+//             statusFilter: status,
+//             maxResults: 2,
+//           },
+//           (err, data) => {
+//             if (err) {
+//               reject(err);
+//             } else {
+//               resolve(data.executions);
+//             }
+//           }
+//         );
+//       });
+//     };
+
+//     const customerExcList = await getExecutionList(customerArn);
+//     if (customerExcList.length === 2 && customerExcList[1].status === status) {
+//       console.log("AR running");
+//       return true;
+//     }
+
+//     return false;
+//   } catch (error) {
+//     return true;
+//   }
+// }
+
 async function checkOldProcessIsRunning() {
   try {
-    const customerArn = process.env.NETSUITE_AR_M1_CUSTOMER_STEP_ARN;
+    const customerArn = process.env.NETSUITE_AR_TR_CUSTOMER_STEP_ARN;
     const status = "RUNNING";
     const stepfunctions = new AWS.StepFunctions();
 
@@ -319,7 +422,7 @@ async function checkOldProcessIsRunning() {
       maxResults: 2,
     }).promise();
 
-    console.log("AR listExecutions data", data);
+    console.info("AR listExecutions data", data);
     const cusExcList = data.executions;
 
     if (
@@ -327,7 +430,7 @@ async function checkOldProcessIsRunning() {
       cusExcList.length === 2 &&
       cusExcList[1].status === status
     ) {
-      console.log("AR running");
+      console.info("AR running");
       return true;
     } else {
       return false;

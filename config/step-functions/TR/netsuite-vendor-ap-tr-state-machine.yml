@@ -1,13 +1,13 @@
 ---
 stateMachine:
-  name: netsuite-vendor-ap-cw-restlet-state-machine-${self:provider.stage}
+  name: netsuite-vendor-ap-tr-restlet-state-machine-${self:provider.stage}
   definition:
-    Comment: "State machine to update netsuit AP CW Restlet vendor internal details"
+    Comment: "State machine to update netsuit AP TR Restlet vendor internal details"
     StartAt: PublishEvents
     States:
       PublishEvents:
         Type: Task
-        Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-vendor-ap-cw-${self:provider.stage}"
+        Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-vendor-ap-tr-${self:provider.stage}"
         Next: EndChoice
       EndChoice:
         Type: Choice
@@ -23,7 +23,7 @@ stateMachine:
             Next: SuccessState
       InvokeLambda:
         Type: Task
-        Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-ap-cw-${self:provider.stage}"
+        Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-ap-tr-${self:provider.stage}"
         Next: SecondEndChoice
       SecondEndChoice:
         Type: Choice

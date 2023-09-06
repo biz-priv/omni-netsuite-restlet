@@ -425,7 +425,7 @@ function getHardcodeData(isIntercompany = false) {
   return {
     ...data,
     department: data.department[departmentType],
-  }
+  };
 }
 
 function dateFormat(param) {

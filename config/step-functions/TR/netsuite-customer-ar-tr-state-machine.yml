@@ -1,13 +1,20 @@
 ---
 stateMachine:
-  name: netsuite-vendor-ap-cw-restlet-state-machine-${self:provider.stage}
+  name: netsuite-customer-ar-tr-restlet-state-machine-${self:provider.stage}
+  # events:
+  #   - schedule:
+  #       rate: cron(0 15 * * ? *) # CST:- 10:00 AM IST:- 08:30 pm
+  #   - schedule:
+  #       rate: cron(0 18 * * ? *) # CST:- 01:00 PM IST:- 11:30 pm
+  #   - schedule:
+  #       rate: cron(0 20 * * ? *) # CST:- 03:00 PM IST:- 01:30 am
   definition:
-    Comment: "State machine to update netsuit AP CW Restlet vendor internal details"
+    Comment: "State machine to update netsuit customer AR TR Restlet internal details"
     StartAt: PublishEvents
     States:
       PublishEvents:
         Type: Task
-        Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-vendor-ap-cw-${self:provider.stage}"
+        Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-customer-ar-tr-${self:provider.stage}"
         Next: EndChoice
       EndChoice:
         Type: Choice
@@ -23,7 +30,7 @@ stateMachine:
             Next: SuccessState
       InvokeLambda:
         Type: Task
-        Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-ap-cw-${self:provider.stage}"
+        Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-ar-tr-${self:provider.stage}"
         Next: SecondEndChoice
       SecondEndChoice:
         Type: Choice
@@ -36,5 +43,3 @@ stateMachine:
             Next: InvokeLambda
       SuccessState:
         Type: Succeed
-
-      

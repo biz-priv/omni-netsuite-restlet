@@ -85,26 +85,40 @@ layers:
       - nodejs18.x
 
 functions:
+  #CW lambda functions
   netsuite-ar-cw-restlet: ${file(config/functions/CW/netsuite-ar-cw.yml):function}
   netsuite-customer-ar-cw-restlet: ${file(config/functions/CW/netsuite-customer-ar-cw.yml):function}
   netsuite-ap-cw-restlet: ${file(config/functions/CW/netsuite-ap-cw.yml):function}
   netsuite-vendor-ap-cw-restlet: ${file(config/functions/CW/netsuite-vendor-ap-cw.yml):function}
- 
-  #report fn
-  invoice-report: ${file(config/functions/invoice-report.yml):function}
-
+  #TR lambda functions
+  netsuite-ar-tr-restlet: ${file(config/functions/TR/netsuite-ar-tr.yml):function}
+  netsuite-customer-ar-tr-restlet: ${file(config/functions/TR/netsuite-customer-ar-tr.yml):function}
+  netsuite-ap-tr-restlet: ${file(config/functions/TR/netsuite-ap-tr.yml):function}
+  netsuite-vendor-ap-tr-restlet: ${file(config/functions/TR/netsuite-vendor-ap-tr.yml):function}
+  #M1 lambda functions
   netsuite-ar-m1-restlet: ${file(config/functions/M1/netsuite-ar-m1.yml):function}
   netsuite-customer-ar-m1-restlet: ${file(config/functions/M1/netsuite-customer-ar-m1.yml):function}
   netsuite-ap-m1-restlet: ${file(config/functions/M1/netsuite-ap-m1.yml):function}
-  netsuite-vendor-ap-m1-restlet: ${file(config/functions/M1/netsuite-vendor-ap-m1.yml):function}
+  netsuite-vendor-ap-m1-restlet: ${file(config/functions/M1/netsuite-vendor-ap-m1.yml):function} 
+  #report fn
+  invoice-report: ${file(config/functions/invoice-report.yml):function}
+  #Intercompany fn
+  netsuite-cw-intercompany-restlet: ${file(config/functions/netsuite-intercompany.yml):function}
+  netsuite-tr-intercompany-restlet: ${file(config/functions/netsuite-tr-intercompany.yml):function}
+
 
 stepFunctions:
   stateMachines:
+    #CW Step Functions
     netsuite-customer-ar-cw-restlet: ${file(config/step-functions/CW/netsuite-customer-ar-cw-state-machine.yml):stateMachine}
     netsuite-vendor-ap-cw-restlet: ${file(config/step-functions/CW/netsuite-vendor-ap-cw-state-machine.yml):stateMachine}
-
-    #cw intercompny 
-    netsuite-cw-intercompany-restlet: ${file(config/step-functions/netsuite-intercompany-state-machine.yml):stateMachine}
-
+    #TR Step Functions
+    netsuite-customer-ar-tr-restlet: ${file(config/step-functions/TR/netsuite-customer-ar-tr-state-machine.yml):stateMachine}
+    netsuite-vendor-ap-tr-restlet: ${file(config/step-functions/TR/netsuite-vendor-ap-tr-state-machine.yml):stateMachine}
+    #M1 Step Functions
     netsuite-customer-ar-m1-restlet: ${file(config/step-functions/M1/netsuite-customer-ar-m1-state-machine.yml):stateMachine}
-    netsuite-vendor-ap-m1-restlet: ${file(config/step-functions/M1/netsuite-vendor-ap-m1-state-machine.yml):stateMachine}    
+    netsuite-vendor-ap-m1-restlet: ${file(config/step-functions/M1/netsuite-vendor-ap-m1-state-machine.yml):stateMachine}   
+    #cw intercompany 
+    netsuite-cw-intercompany-restlet: ${file(config/step-functions/netsuite-intercompany-state-machine.yml):stateMachine}
+    #TR intercompany 
+    netsuite-tr-intercompany-restlet: ${file(config/step-functions/netsuite-intercompany-tr-state-machine.yml):stateMachine}

@@ -11,11 +11,19 @@ const mailList = {
     AR: process.env.NETSUIT_AR_ERROR_EMAIL_TO,
     AP: process.env.NETSUIT_AP_ERROR_EMAIL_TO,
   },
+  TR: {
+    AR: process.env.NETSUIT_AR_TR_ERROR_EMAIL_TO,
+    AP: process.env.NETSUIT_AP_TR_ERROR_EMAIL_TO,
+  },
+  M1: {
+    AR: process.env.NETSUIT_AR_ERROR_EMAIL_TO,
+    AP: process.env.NETSUIT_AP_ERROR_EMAIL_TO,
+  },
   INTERCOMPANY: {
     CW: process.env.NETSUIT_AP_ERROR_EMAIL_TO,
+    TR: process.env.NETSUIT_AP_ERROR_EMAIL_TO,
   },
 };
-
 
 module.exports.handler = async (event, context, callback) => {
   let sourceSystem = "",
@@ -138,6 +146,14 @@ async function getReportData(
         mainQuery = `select ${dbname}interface_ap.*, CONCAT('Vendor not found. (vendor_id: ', CAST(vendor_id AS CHAR), ') Subsidiary: ', subsidiary) AS error_msg
         from ${dbname}interface_ap where source_system = '${sourceSystem}' and processed ='F' and vendor_id in (${queryVenErr})
         GROUP BY invoice_nbr, vendor_id, invoice_type, gc_code, subsidiary, source_system;`;
+      } else if (sourceSystem == "M1") {
+        mainQuery = `select ${dbname}interface_ap.*, CONCAT('Vendor not found. (vendor_id: ', CAST(vendor_id AS CHAR), ') Subsidiary: ', subsidiary) AS error_msg
+        from ${dbname}interface_ap where source_system = '${sourceSystem}' and processed ='F' and vendor_id in (${queryVenErr})
+        GROUP BY invoice_nbr, vendor_id, invoice_type, gc_code, subsidiary, source_system;`;
+      } else if (sourceSystem == "TR") {
+        mainQuery = `select ${dbname}interface_ap.*, CONCAT('Vendor not found. (vendor_id: ', CAST(vendor_id AS CHAR), ') Subsidiary: ', subsidiary) AS error_msg
+        from ${dbname}interface_ap where source_system = '${sourceSystem}' and processed ='F' and vendor_id in (${queryVenErr})
+        GROUP BY invoice_nbr, vendor_id, invoice_type, gc_code, subsidiary, source_system;`;
       }
       console.info("mainQuery", mainQuery);
       const data = await executeQuery(connections, sourceSystem, mainQuery);
@@ -191,6 +207,14 @@ async function getReportData(
         mainQuery = `select ${dbname}interface_ar.*, CONCAT('Customer not found. (customer_id: ', CAST(customer_id AS CHAR), ') Subsidiary: ', subsidiary) AS error_msg
         from ${dbname}interface_ar where source_system = 'CW' and processed ='F' and customer_id in (${queryCuErr})
         GROUP BY invoice_nbr, invoice_type, gc_code, subsidiary`;
+      } else if (sourceSystem == "M1") {
+        mainQuery = `select ${dbname}interface_ar.*, CONCAT('Customer not found. (customer_id: ', CAST(customer_id AS CHAR), ') Subsidiary: ', subsidiary) AS error_msg
+        from ${dbname}interface_ar where source_system = '${sourceSystem}' and processed ='F' and customer_id in (${queryCuErr})
+        GROUP BY invoice_nbr, invoice_type, gc_code, subsidiary`;
+      } else if (sourceSystem == "TR") {
+        mainQuery = `select ${dbname}interface_ar.*, CONCAT('Customer not found. (customer_id: ', CAST(customer_id AS CHAR), ') Subsidiary: ', subsidiary) AS error_msg
+        from ${dbname}interface_ar where source_system = '${sourceSystem}' and processed ='F' and customer_id in (${queryCuErr})
+        GROUP BY invoice_nbr, invoice_type, gc_code, subsidiary`;
       }
       console.info("mainQuery", mainQuery);
       const data = await executeQuery(connections, sourceSystem, mainQuery);
@@ -231,25 +255,31 @@ async function getReportData(
       // INTERCOMPANY
       if (sourceSystem === "CW") {
         if (intercompanyType === "AP") {
-          // query = `                             
-          // select distinct ap.*,apm.processed ,apm.intercompany_processed,apm.vendor_internal_id, ial.error_msg, ial.id 
-          // from public.interface_ap_cw ap
-          // join public.interface_ap_master_cw apm 
-          // on ap.invoice_nbr =apm.invoice_nbr
-          // and ap.vendor_id =apm.vendor_id and ap.invoice_type =apm.invoice_type
-          // join interface_intercompany_api_logs ial on ial.source_system = apm.source_system 
-          // and ial.ap_internal_id = apm.internal_id and ial.file_nbr = apm.file_nbr 
-          // where ap.intercompany ='Y' and ial.source_system ='CW' and ial.is_report_sent ='N'`;
+          query = `select distinct ia.*,ial.error_msg,ial.id  from dw_uat.interface_ap ia 
+          join dw_uat.interface_intercompany_api_logs ial on ia.source_system=ial.source_system and 
+          ia.internal_id=ial.ap_internal_id and ia.file_nbr= ial.file_nbr
+          where ia.intercompany ='Y' and ial.source_system = 'CW' and ial.is_report_sent = 'N'`
         } else {
-          // query = `                             
-          //   select distinct ar.*, ial.error_msg, ial.id 
-          //   from public.interface_ar_cw ar
-          //   join interface_intercompany_api_logs ial on ial.source_system = ar.source_system 
-          //   and ial.ar_internal_id  = ar.internal_id and ial.file_nbr = ar.file_nbr 
-          //   where ar.intercompany ='Y' and ial.source_system ='CW' and ial.is_report_sent ='N'`;
+          query = `
+          select distinct ar.*, ial.error_msg, ial.id from dw_uat.interface_ar ar
+          join dw_uat.interface_intercompany_api_logs ial on ial.source_system = ar.source_system 
+          and ial.ar_internal_id  = ar.internal_id and ial.file_nbr = ar.file_nbr 
+          where ar.intercompany ='Y' and ial.source_system ='CW' and ial.is_report_sent ='N'`
+        }
+      } else if (sourceSystem === "TR") {
+        if (intercompanyType === "AP") {
+          query = `select distinct ia.*,ial.error_msg,ial.id  from dw_uat.interface_ap ia 
+          join dw_uat.interface_intercompany_api_logs ial on ia.source_system=ial.source_system and 
+          ia.internal_id=ial.ap_internal_id and ia.file_nbr= ial.file_nbr
+          where ia.intercompany ='Y' and ial.source_system = 'TR' and ial.is_report_sent = 'N'`
+        } else {
+          query = `
+          select distinct ar.*, ial.error_msg, ial.id from dw_uat.interface_ar ar
+          join dw_uat.interface_intercompany_api_logs ial on ial.source_system = ar.source_system 
+          and ial.ar_internal_id  = ar.internal_id and ial.file_nbr = ar.file_nbr 
+          where ar.intercompany ='Y' and ial.source_system ='TR' and ial.is_report_sent ='N'`
         }
       }
-
       console.info("query:getReportData", query);
       const data = await executeQuery(connections, sourceSystem, query);
       console.info("query:data", data.length);
