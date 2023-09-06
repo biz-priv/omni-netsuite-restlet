@@ -20,7 +20,7 @@ const source_system = "TR";
 
 module.exports.handler = async (event, context, callback) => {
   userConfig = getConfig(source_system, process.env);
-   const checkIsRunning = await checkOldProcessIsRunning();
+  const checkIsRunning = await checkOldProcessIsRunning();
   if (checkIsRunning) {
     return {
       hasMoreData: "false",

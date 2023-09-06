@@ -85,10 +85,12 @@ layers:
       - nodejs18.x
 
 functions:
+  #CW lambda functions
   netsuite-ar-cw-restlet: ${file(config/functions/CW/netsuite-ar-cw.yml):function}
   netsuite-customer-ar-cw-restlet: ${file(config/functions/CW/netsuite-customer-ar-cw.yml):function}
   netsuite-ap-cw-restlet: ${file(config/functions/CW/netsuite-ap-cw.yml):function}
   netsuite-vendor-ap-cw-restlet: ${file(config/functions/CW/netsuite-vendor-ap-cw.yml):function}
+  #TR lambda functions
   netsuite-ar-tr-restlet: ${file(config/functions/TR/netsuite-ar-tr.yml):function}
   netsuite-customer-ar-tr-restlet: ${file(config/functions/TR/netsuite-customer-ar-tr.yml):function}
   netsuite-ap-tr-restlet: ${file(config/functions/TR/netsuite-ap-tr.yml):function}
@@ -104,8 +106,10 @@ functions:
 
 stepFunctions:
   stateMachines:
+    #CW Step Functions
     netsuite-customer-ar-cw-restlet: ${file(config/step-functions/CW/netsuite-customer-ar-cw-state-machine.yml):stateMachine}
     netsuite-vendor-ap-cw-restlet: ${file(config/step-functions/CW/netsuite-vendor-ap-cw-state-machine.yml):stateMachine}
+    #TR Step Functions
     netsuite-customer-ar-tr-restlet: ${file(config/step-functions/TR/netsuite-customer-ar-tr-state-machine.yml):stateMachine}
     netsuite-vendor-ap-tr-restlet: ${file(config/step-functions/TR/netsuite-vendor-ap-tr-state-machine.yml):stateMachine}
 

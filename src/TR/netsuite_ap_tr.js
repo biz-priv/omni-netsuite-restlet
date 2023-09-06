@@ -417,6 +417,7 @@ async function makeJsonPayload(data) {
       custbody_omni_po_hawb: singleItem.housebill_nbr ?? "",//1748  //need to check on 1756 internal id with priyanka
       custbody_mode: singleItem?.mode_name ?? "",//2673
       custbody_service_level: singleItem?.service_level ?? "",//2674
+      memo:singleItem.housebill_nbr ?? "",
       
       item: data.map((e) => {
         return {

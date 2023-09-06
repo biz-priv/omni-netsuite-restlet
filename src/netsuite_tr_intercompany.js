@@ -29,12 +29,12 @@ const arDbName = dbname + "interface_ar";
 const apDbName = dbname + "interface_ap";
 
 module.exports.handler = async (event, context, callback) => {
-  // const checkIsRunning = await checkOldProcessIsRunning();
-  // if (checkIsRunning) {
-  //   return {
-  //     hasMoreData: "false",
-  //   };
-  // }
+  const checkIsRunning = await checkOldProcessIsRunning();
+  if (checkIsRunning) {
+    return {
+      hasMoreData: "false",
+    };
+  }
 
   let hasMoreData = "false";
   let currentCount = 0;
