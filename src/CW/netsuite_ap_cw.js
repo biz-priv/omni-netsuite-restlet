@@ -411,11 +411,10 @@ async function makeJsonPayload(data) {
       class: hardcode.class.head,
       department: hardcode.department.head,
       location: hardcode.location.head,
-      otherRefNum: singleItem.customer_po ?? "",
       custbody9: singleItem.file_nbr ?? "",//1730
       custbody17: singleItem.email ?? "",//1744
       custbody_source_system: hardcode.source_system,//2327
-      custbodymfc_tmsinvoice: get(singleItem, "invoice_nbr", ""),
+      custbodymfc_tmsinvoice: singleItem.invoice_nbr ?? "",
       custbody_omni_po_hawb: singleItem.housebill_nbr ?? "",//1748  //need to check on 1756 internal id with priyanka
       custbody_mode: singleItem?.mode_name ?? "",//2673
       custbody_service_level: singleItem?.service_level ?? "",//2674
@@ -444,12 +443,12 @@ async function makeJsonPayload(data) {
           custcol4: e.ref_nbr ?? "",//1168
           custcol_riv_consol_nbr: e.consol_nbr ?? "",////prod:- 2510 dev:- 2506
           custcol_finalizedby: e.finalizedby ?? "",//2614
-          custcol20: get(e, "actual_weight", ""),
-          custcol19: get(e, "dest_zip", ""),
-          custcol18: get(e, "dest_state", ""),
-          custcol17: get(e, "dest_country", ""),
-          custcol_miles_distance: get(e, "miles", ""),
-          custcol_chargeable_weight: get(e, "chargeable_weight", "")
+          custcol20: e.actual_weight ?? "",
+          custcol19: e.dest_zip ?? "",
+          custcol18: e.dest_state ?? "",
+          custcol17: e.dest_country ?? "",
+          custcol_miles_distance: e.miles ?? "",
+          custcol_chargeable_weight: e.chargeable_weight ?? "",
         };
       }),
     };

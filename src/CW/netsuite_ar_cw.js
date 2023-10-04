@@ -196,7 +196,7 @@ async function makeJsonPayload(data) {
     const hardcode = getHardcodeData(
       singleItem.intercompany == "Y" ? true : false
     );
-
+    
     /**
      * head level details
      */
@@ -217,15 +217,15 @@ async function makeJsonPayload(data) {
       class: hardcode.class.head,
       location: hardcode.location.head,
       custbody_source_system: hardcode.source_system,//2327
-      custbodymfc_tmsinvoice: get(singleItem, "invoice_nbr", ""),
+      custbodymfc_tmsinvoice: singleItem.invoice_nbr ?? "",
       entity: singleItem.customer_internal_id ?? "",
       subsidiary: singleItem.subsidiary ?? "",
       currency: singleItem.currency_internal_id ?? "",
-      otherrefnum: get(singleItem, "order_ref", ""),
+      otherrefnum: singleItem.order_ref ?? "",
       custbody_mode: singleItem?.mode_name ?? "",//2673
       custbody_service_level: singleItem?.service_level ?? "",//2674
       custbody18: singleItem.finalized_date ?? "",//1745
-      custbody9: singleItem.housebill_nbr ?? "",//1730 //here in soap we are passing file_nbr
+      custbody9: singleItem.file_nbr ?? "",//1730 //here in soap we are passing file_nbr
       custbody17: singleItem.email ?? "",//1744
       custbody25: singleItem.zip_code ?? "",//2698
       custbody19: singleItem.unique_ref_nbr ?? "",//1734
@@ -252,12 +252,12 @@ async function makeJsonPayload(data) {
             refName: e.controlling_stn ?? "",//1166
           },
           custcol1: e.ready_date ? e.ready_date.toISOString() : "",//1164
-          custcol20: get(e, "actual_weight", ""),
-          custcol19: get(e, "dest_zip", ""),
-          custcol18: get(e, "dest_state", ""),
-          custcol17: get(e, "dest_country", ""),
-          custcol_miles_distance: get(e, "miles", ""),
-          custcol_chargeable_weight: get(e, "chargeable_weight", "")
+          custcol20: e.actual_weight ?? "",
+          custcol19: e.dest_zip ?? "",
+          custcol18: e.dest_state ?? "",
+          custcol17: e.dest_country ?? "",
+          custcol_miles_distance: e.miles ?? "",
+          custcol_chargeable_weight: e.chargeable_weight ?? "",
         };
       }),
     };
