@@ -337,7 +337,7 @@ async function getDataGroupBy(connections) {
 
     const dateCheckOperator = "<";
     const query = `SELECT invoice_nbr, vendor_id, invoice_type, count(*) as tc,gc_code
-    FROM dw_uat.interface_ap 
+    FROM ${apDbName} 
     WHERE  ((internal_id is null and processed is null and vendor_internal_id is not null) or
     (vendor_internal_id is not null and processed ='F' and processed_date ${dateCheckOperator} '${today}')) and 
     ((intercompany='Y' and pairing_available_flag ='Y') OR 
