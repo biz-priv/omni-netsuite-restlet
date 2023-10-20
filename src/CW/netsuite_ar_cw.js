@@ -51,7 +51,7 @@ module.exports.handler = async (event, context, callback) => {
     /**
      * 5 simultaneous process
      */
-    const perLoop = 15;
+    const perLoop = 5;
     let queryData = [];
     for (let index = 0; index < (orderData.length + 1) / perLoop; index++) {
       let newArray = orderData.slice(
