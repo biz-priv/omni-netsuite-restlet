@@ -10,6 +10,7 @@ const {
   sendDevNotification,
 } = require("../../Helpers/helper");
 const { getBusinessSegment } = require("../../Helpers/businessSegmentHelper");
+const { get } = require("lodash");
 
 let userConfig = "";
 let connections = "";
@@ -50,7 +51,7 @@ module.exports.handler = async (event, context, callback) => {
     /**
      * 5 simultaneous process
      */
-    const perLoop = 15;
+    const perLoop = 5;
     let queryData = [];
     for (let index = 0; index < (orderData.length + 1) / perLoop; index++) {
       let newArray = orderData.slice(
@@ -195,7 +196,7 @@ async function makeJsonPayload(data) {
     const hardcode = getHardcodeData(
       singleItem.intercompany == "Y" ? true : false
     );
-
+    
     /**
      * head level details
      */
@@ -216,14 +217,15 @@ async function makeJsonPayload(data) {
       class: hardcode.class.head,
       location: hardcode.location.head,
       custbody_source_system: hardcode.source_system,//2327
+      custbodymfc_tmsinvoice: singleItem.invoice_nbr ?? "",
       entity: singleItem.customer_internal_id ?? "",
       subsidiary: singleItem.subsidiary ?? "",
       currency: singleItem.currency_internal_id ?? "",
-      otherrefnum: singleItem.file_nbr ?? "",
+      otherrefnum: singleItem.order_ref ?? "",
       custbody_mode: singleItem?.mode_name ?? "",//2673
       custbody_service_level: singleItem?.service_level ?? "",//2674
       custbody18: singleItem.finalized_date ?? "",//1745
-      custbody9: singleItem.housebill_nbr ?? "",//1730 //here in soap we are passing file_nbr
+      custbody9: singleItem.file_nbr ?? "",//1730 //here in soap we are passing file_nbr
       custbody17: singleItem.email ?? "",//1744
       custbody25: singleItem.zip_code ?? "",//2698
       custbody19: singleItem.unique_ref_nbr ?? "",//1734
@@ -250,6 +252,12 @@ async function makeJsonPayload(data) {
             refName: e.controlling_stn ?? "",//1166
           },
           custcol1: e.ready_date ? e.ready_date.toISOString() : "",//1164
+          custcol20: e.actual_weight ?? "",
+          custcol19: e.dest_zip ?? "",
+          custcol18: e.dest_state ?? "",
+          custcol17: e.dest_country ?? "",
+          custcol_miles_distance: e.miles ?? "",
+          custcol_chargeable_weight: e.chargeable_weight ?? "",
         };
       }),
     };
