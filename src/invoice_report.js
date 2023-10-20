@@ -257,14 +257,14 @@ async function getReportData(
         }
       } else if (sourceSystem === "TR") {
         if (intercompanyType === "AP") {
-          query=`select distinct ia.*,ial.error_msg,ial.id  from dw_uat.interface_ap ia 
-          join dw_uat.interface_intercompany_api_logs ial on ia.source_system=ial.source_system and 
+          query=`select distinct ia.*,ial.error_msg,ial.id  from ${dbname}interface_ap ia 
+          join ${dbname}interface_intercompany_api_logs ial on ia.source_system=ial.source_system and 
           ia.internal_id=ial.ap_internal_id and ia.file_nbr= ial.file_nbr
           where ia.intercompany ='Y' and ial.source_system = 'TR' and ial.is_report_sent = 'N'` 
         } else {
           query=`
-          select distinct ar.*, ial.error_msg, ial.id from dw_uat.interface_ar ar
-          join dw_uat.interface_intercompany_api_logs ial on ial.source_system = ar.source_system 
+          select distinct ar.*, ial.error_msg, ial.id from ${dbname}interface_ar ar
+          join ${dbname}interface_intercompany_api_logs ial on ial.source_system = ar.source_system 
           and ial.ar_internal_id  = ar.internal_id and ial.file_nbr = ar.file_nbr 
           where ar.intercompany ='Y' and ial.source_system ='TR' and ial.is_report_sent ='N'`
         }
