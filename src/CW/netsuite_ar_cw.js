@@ -231,9 +231,7 @@ async function makeJsonPayload(data) {
       custbody19: singleItem.unique_ref_nbr ?? "",//1734
       item: data.map((e) => {
         return {
-          // custcol_mfc_line_unique_key:"",
           item: e.charge_cd_internal_id ?? "",
-          // taxcode: e?.tax_code_internal_id ?? "",
           ...(e.tax_code_internal_id ?? "" !== "" ? { taxcode: e.tax_code_internal_id } : {}),
           description: e?.charge_cd_desc ?? "",
           amount: +parseFloat(e.total).toFixed(2) ?? "",
