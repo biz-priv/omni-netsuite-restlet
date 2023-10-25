@@ -8,6 +8,7 @@ const {
   createARFailedRecords,
   triggerReportLambda,
   sendDevNotification,
+  setDelay,
 } = require("../../Helpers/helper");
 const { getBusinessSegment } = require("../../Helpers/businessSegmentHelper");
 const { get } = require("lodash");
@@ -49,15 +50,16 @@ module.exports.handler = async (event, context, callback) => {
     console.info("invoiceDataList", invoiceDataList.length);
 
     /**
-     * 5 simultaneous process
+     * 3 simultaneous process
      */
-    const perLoop = 15;
+    const perLoop = 3;
     let queryData = [];
     for (let index = 0; index < (orderData.length + 1) / perLoop; index++) {
       let newArray = orderData.slice(
         index * perLoop,
         index * perLoop + perLoop
       );
+      await setDelay(1);
 
       const data = await Promise.all(
         newArray.map(async (item) => {
@@ -231,9 +233,8 @@ async function makeJsonPayload(data) {
       custbody19: singleItem.unique_ref_nbr ?? "",//1734
       item: data.map((e) => {
         return {
-          // custcol_mfc_line_unique_key:"",
           item: e.charge_cd_internal_id ?? "",
-          taxcode: e?.tax_code_internal_id ?? "",
+          ...(e.tax_code_internal_id ?? "" !== "" ? { taxcode: e.tax_code_internal_id } : {}),
           description: e?.charge_cd_desc ?? "",
           amount: +parseFloat(e.total).toFixed(2) ?? "",
           rate: +parseFloat(e.rate).toFixed(2) ?? "",
