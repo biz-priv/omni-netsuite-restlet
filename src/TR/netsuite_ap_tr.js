@@ -8,17 +8,15 @@ const {
   createAPFailedRecords,
   triggerReportLambda,
   sendDevNotification,
-  setDelay,
 } = require("../../Helpers/helper");
 const { getBusinessSegment } = require("../../Helpers/businessSegmentHelper");
-const { get } = require("lodash");
 
 let userConfig = "";
 let connections = "";
 
 const apDbNamePrev = process.env.DATABASE_NAME;
 const apDbName = apDbNamePrev + "interface_ap";
-const source_system = "CW";
+const source_system = "TR";
 
 const today = getCustomDate();
 const lineItemPerProcess = 500;
@@ -124,7 +122,7 @@ module.exports.handler = async (event, context, callback) => {
           } catch (error) {
             await triggerReportLambda(
               process.env.NS_RESTLET_INVOICE_REPORT,
-              "CW_AP"
+              "TR_AP"
             );
             await startNextStep();
             return { hasMoreData: "false" };
@@ -177,7 +175,7 @@ module.exports.handler = async (event, context, callback) => {
             };
           }
         } catch (error) {
-          console.error("error", error);
+          console.info("error", error);
           return {
             hasMoreData: "true",
             queryOperator,
@@ -203,7 +201,7 @@ module.exports.handler = async (event, context, callback) => {
 
       try {
         invoiceIDs = orderData.map((a) => "'" + a.invoice_nbr + "'");
-        console.info("orderData**", orderData.length);
+        console.info("orderData**", orderData.length, orderData);
         console.info("invoiceIDs", invoiceIDs);
         if (orderData.length === 1) {
           console.info("length==1", orderData);
@@ -223,24 +221,15 @@ module.exports.handler = async (event, context, callback) => {
         };
       }
       /**
-<<<<<<< HEAD
-       * 3 simultaneous process
+       * 15 simultaneous process
        */
-      const perLoop = 3;
-=======
-       * 5 simultaneous process
-       */
-      const perLoop = 5;
->>>>>>> 23044e506a0bff14f5b302a55a5161914cc4f167
+      const perLoop = 15;
       let queryData = [];
       for (let index = 0; index < (orderData.length + 1) / perLoop; index++) {
         let newArray = orderData.slice(
           index * perLoop,
           index * perLoop + perLoop
         );
-
-        await setDelay(1);
-        
         const data = await Promise.all(
           newArray.map(async (item) => {
             return await mainProcess(item, invoiceDataList);
@@ -261,7 +250,7 @@ module.exports.handler = async (event, context, callback) => {
     }
   } catch (error) {
     console.error("error", error);
-    await triggerReportLambda(process.env.NS_RESTLET_INVOICE_REPORT, "CW_AP");
+    await triggerReportLambda(process.env.NS_RESTLET_INVOICE_REPORT, "TR_AP");
     await startNextStep();
     return { hasMoreData: "false" };
   }
@@ -347,7 +336,7 @@ async function getDataGroupBy(connections) {
 
     const dateCheckOperator = "<";
     const query = `SELECT invoice_nbr, vendor_id, invoice_type, count(*) as tc,gc_code
-    FROM ${apDbName} 
+    FROM dw_uat.interface_ap 
     WHERE  ((internal_id is null and processed is null and vendor_internal_id is not null) or
     (vendor_internal_id is not null and processed ='F' and processed_date ${dateCheckOperator} '${today}')) and 
     ((intercompany='Y' and pairing_available_flag ='Y') OR 
@@ -421,16 +410,19 @@ async function makeJsonPayload(data) {
       class: hardcode.class.head,
       department: hardcode.department.head,
       location: hardcode.location.head,
+      otherRefNum: singleItem.customer_po ?? "",
       custbody9: singleItem.file_nbr ?? "",//1730
       custbody17: singleItem.email ?? "",//1744
       custbody_source_system: hardcode.source_system,//2327
-      custbodymfc_tmsinvoice: singleItem.invoice_nbr ?? "",
       custbody_omni_po_hawb: singleItem.housebill_nbr ?? "",//1748  //need to check on 1756 internal id with priyanka
       custbody_mode: singleItem?.mode_name ?? "",//2673
       custbody_service_level: singleItem?.service_level ?? "",//2674
+      memo:singleItem.housebill_nbr ?? "",
+      
       item: data.map((e) => {
         return {
-          ...(e.tax_code_internal_id ?? "" !== "" ? { taxcode: e.tax_code_internal_id } : {}),
+          // custcol_mfc_line_unique_key:"",
+          taxcode: e.tax_code_internal_id ?? "",
           item: e.charge_cd_internal_id ?? "",
           description: e.charge_cd_desc ?? "",
           amount: +parseFloat(e.total).toFixed(2) ?? "",
@@ -452,12 +444,6 @@ async function makeJsonPayload(data) {
           custcol4: e.ref_nbr ?? "",//1168
           custcol_riv_consol_nbr: e.consol_nbr ?? "",////prod:- 2510 dev:- 2506
           custcol_finalizedby: e.finalizedby ?? "",//2614
-          custcol_actual_weight: e.actual_weight ?? "",//dev: custcol20  prod: custcol_actual_weight
-          custcol_destination_on_zip: e.dest_zip ?? "",//dev: custcol19  prod: custcol_destination_on_zip
-          custcol_destination_on_state: e.dest_state ?? "",//dev: custcol18  prod: custcol_destination_on_state
-          custcol_destination_on_country: e.dest_country ?? "",//dev: custcol17  prod: custcol_destination_on_country
-          custcol_miles_distance: e.miles ?? "",
-          custcol_chargeable_weight: e.chargeable_weight ?? "",
         };
       }),
     };
@@ -471,7 +457,7 @@ async function makeJsonPayload(data) {
     await sendDevNotification(
       source_system,
       "AP",
-      "netsuite_ap_cw payload error",
+      "netsuite_ap_tr payload error",
       data[0],
       error
     );
@@ -618,7 +604,7 @@ async function makeLineItemsJsonPayload(invoiceId, data) {
     await sendDevNotification(
       source_system,
       "AP",
-      "netsuite_ap_cw payload error",
+      "netsuite_ap_tr payload error",
       data[0],
       error
     );
@@ -679,7 +665,7 @@ async function createInvoiceAndUpdateLineItems(invoiceId, data) {
       };
     }
   } catch (error) {
-    console.error('error:createInvoice:main:catch', error);
+    console.log('error:createInvoice:main:catch', error);
     if (error?.response?.reason) {
       throw {
         customError: true,
@@ -718,17 +704,10 @@ function getUpdateQuery(item, invoiceId, isSuccess = true) {
       query += ` SET internal_id = null, processed = 'F', `;
     }
     query += ` processed_date = '${today}'  
-<<<<<<< HEAD
                 WHERE source_system = '${source_system}' and 
                       invoice_nbr = '${item.invoice_nbr}' and 
                       invoice_type = '${item.invoice_type}'and 
-                      vendor_id = '${item.vendor_id}' and gc_code = '${item.gc_code}';`;
-=======
-    WHERE source_system = '${source_system}' and
-    invoice_nbr = '${item.invoice_nbr}' and
-    invoice_type = '${item.invoice_type}'and
-    vendor_id = '${item.vendor_id}' and gc_code = '${item.gc_code}';`;
->>>>>>> 23044e506a0bff14f5b302a55a5161914cc4f167
+                      vendor_id = '${item.vendor_id}'`;
 
     return query;
   } catch (error) {
@@ -752,7 +731,7 @@ async function updateInvoiceId(connections, query) {
       await sendDevNotification(
         source_system,
         "AP",
-        "netsuite_ap_cw updateInvoiceId",
+        "netsuite_ap_tr updateInvoiceId",
         "Invoice is created But failed to update internal_id " + element,
         error
       );

@@ -17,13 +17,13 @@ const userConfig = {
   token: {
     consumer_key: process.env.NETSUIT_AR_CONSUMER_KEY,
     consumer_secret: process.env.NETSUIT_AR_CONSUMER_SECRET,
-    token_key: process.env.NETSUIT_CW_TOKEN_KEY,
-    token_secret: process.env.NETSUIT_CW_TOKEN_SECRET,
+    token_key: process.env.NETSUIT_TR_TOKEN_KEY,
+    token_secret: process.env.NETSUIT_TR_TOKEN_SECRET,
   },
 };
 const today = getCustomDate();
 const totalCountPerLoop = 5;
-const source_system = "CW";
+const source_system = "TR";
 const dbname = process.env.DATABASE_NAME;
 const arDbName = dbname + "interface_ar";
 const apDbName = dbname + "interface_ap";
@@ -61,7 +61,7 @@ module.exports.handler = async (event, context, callback) => {
     } else {
       await triggerReportLambda(
         process.env.NS_RESTLET_INVOICE_REPORT,
-        "CW_INTERCOMPANY"
+        "TR_INTERCOMPANY"
       );
       hasMoreData = "false";
     }
@@ -70,7 +70,7 @@ module.exports.handler = async (event, context, callback) => {
     console.error("error:handler", error);
     await triggerReportLambda(
       process.env.NS_RESTLET_INVOICE_REPORT,
-      "CW_INTERCOMPANY"
+      "TR_INTERCOMPANY"
     );
     return { hasMoreData: "false" };
   }
@@ -147,7 +147,7 @@ async function updateAPandAr(connections, item, processed = "P") {
     console.error("error:updateAPandAr", error);
     await sendDevNotification(
       "INVOICE-INTERCOMPANY",
-      "CW",
+      "TR",
       "netsuite_intercompany updateAPandAr",
       item,
       error
@@ -167,7 +167,7 @@ async function mainProcess(connections, item) {
     } else {
       await sendDevNotification(
         "INVOICE-INTERCOMPANY",
-        "CW",
+        "TR",
         "netsuite_intercompany mainProcess",
         item,
         error
