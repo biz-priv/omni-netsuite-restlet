@@ -8,6 +8,7 @@ const {
   createAPFailedRecords,
   triggerReportLambda,
   sendDevNotification,
+  setDelay,
 } = require("../../Helpers/helper");
 const { getBusinessSegment } = require("../../Helpers/businessSegmentHelper");
 const { get } = require("lodash");
@@ -222,15 +223,24 @@ module.exports.handler = async (event, context, callback) => {
         };
       }
       /**
+<<<<<<< HEAD
+       * 3 simultaneous process
+       */
+      const perLoop = 3;
+=======
        * 5 simultaneous process
        */
       const perLoop = 5;
+>>>>>>> 23044e506a0bff14f5b302a55a5161914cc4f167
       let queryData = [];
       for (let index = 0; index < (orderData.length + 1) / perLoop; index++) {
         let newArray = orderData.slice(
           index * perLoop,
           index * perLoop + perLoop
         );
+
+        await setDelay(1);
+        
         const data = await Promise.all(
           newArray.map(async (item) => {
             return await mainProcess(item, invoiceDataList);
@@ -337,7 +347,7 @@ async function getDataGroupBy(connections) {
 
     const dateCheckOperator = "<";
     const query = `SELECT invoice_nbr, vendor_id, invoice_type, count(*) as tc,gc_code
-    FROM dw_uat.interface_ap 
+    FROM ${apDbName} 
     WHERE  ((internal_id is null and processed is null and vendor_internal_id is not null) or
     (vendor_internal_id is not null and processed ='F' and processed_date ${dateCheckOperator} '${today}')) and 
     ((intercompany='Y' and pairing_available_flag ='Y') OR 
@@ -442,10 +452,10 @@ async function makeJsonPayload(data) {
           custcol4: e.ref_nbr ?? "",//1168
           custcol_riv_consol_nbr: e.consol_nbr ?? "",////prod:- 2510 dev:- 2506
           custcol_finalizedby: e.finalizedby ?? "",//2614
-          custcol20: e.actual_weight ?? "",
-          custcol19: e.dest_zip ?? "",
-          custcol18: e.dest_state ?? "",
-          custcol17: e.dest_country ?? "",
+          custcol_actual_weight: e.actual_weight ?? "",//dev: custcol20  prod: custcol_actual_weight
+          custcol_destination_on_zip: e.dest_zip ?? "",//dev: custcol19  prod: custcol_destination_on_zip
+          custcol_destination_on_state: e.dest_state ?? "",//dev: custcol18  prod: custcol_destination_on_state
+          custcol_destination_on_country: e.dest_country ?? "",//dev: custcol17  prod: custcol_destination_on_country
           custcol_miles_distance: e.miles ?? "",
           custcol_chargeable_weight: e.chargeable_weight ?? "",
         };
@@ -708,10 +718,17 @@ function getUpdateQuery(item, invoiceId, isSuccess = true) {
       query += ` SET internal_id = null, processed = 'F', `;
     }
     query += ` processed_date = '${today}'  
+<<<<<<< HEAD
+                WHERE source_system = '${source_system}' and 
+                      invoice_nbr = '${item.invoice_nbr}' and 
+                      invoice_type = '${item.invoice_type}'and 
+                      vendor_id = '${item.vendor_id}' and gc_code = '${item.gc_code}';`;
+=======
     WHERE source_system = '${source_system}' and
     invoice_nbr = '${item.invoice_nbr}' and
     invoice_type = '${item.invoice_type}'and
     vendor_id = '${item.vendor_id}' and gc_code = '${item.gc_code}';`;
+>>>>>>> 23044e506a0bff14f5b302a55a5161914cc4f167
 
     return query;
   } catch (error) {
