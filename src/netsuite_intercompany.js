@@ -17,8 +17,8 @@ const userConfig = {
   token: {
     consumer_key: process.env.NETSUIT_AR_CONSUMER_KEY,
     consumer_secret: process.env.NETSUIT_AR_CONSUMER_SECRET,
-    token_key: process.env.NETSUIT_AR_TOKEN_KEY,
-    token_secret: process.env.NETSUIT_AR_TOKEN_SECRET,
+    token_key: process.env.NETSUIT_CW_TOKEN_KEY,
+    token_secret: process.env.NETSUIT_CW_TOKEN_SECRET,
   },
 };
 const today = getCustomDate();
@@ -190,7 +190,7 @@ async function createInterCompanyInvoice(item) {
       "Content-Type": "application/json",
     };
     const res = await axios.get(url, { headers });
-    if (res.data.status == "Success") {
+    if (res.data == "success") {
       return true;
     } else {
       throw {

@@ -60,7 +60,7 @@ provider:
     NETSUIT_AR_ERROR_EMAIL_FROM: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/from}
     NETSUIT_AR_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/to}
     NS_RESTLET_INVOICE_REPORT: ${self:service}-invoice-report-${self:provider.stage}
-    NS_BASE_URL: https://1238234-sb1.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=1017
+    NS_BASE_URL: ${ssm:/${self:service}/${self:provider.stage}/netsuiteBaseUrl}
 
 plugins:
   - serverless-offline

@@ -10,6 +10,7 @@ const {
   sendDevNotification,
 } = require("../../Helpers/helper");
 const { getBusinessSegment } = require("../../Helpers/businessSegmentHelper");
+const { get } = require("lodash");
 
 let userConfig = "";
 let connections = "";
@@ -221,9 +222,9 @@ module.exports.handler = async (event, context, callback) => {
         };
       }
       /**
-       * 15 simultaneous process
+       * 5 simultaneous process
        */
-      const perLoop = 15;
+      const perLoop = 5;
       let queryData = [];
       for (let index = 0; index < (orderData.length + 1) / perLoop; index++) {
         let newArray = orderData.slice(
@@ -410,17 +411,16 @@ async function makeJsonPayload(data) {
       class: hardcode.class.head,
       department: hardcode.department.head,
       location: hardcode.location.head,
-      otherRefNum: singleItem.customer_po ?? "",
       custbody9: singleItem.file_nbr ?? "",//1730
       custbody17: singleItem.email ?? "",//1744
       custbody_source_system: hardcode.source_system,//2327
+      custbodymfc_tmsinvoice: singleItem.invoice_nbr ?? "",
       custbody_omni_po_hawb: singleItem.housebill_nbr ?? "",//1748  //need to check on 1756 internal id with priyanka
       custbody_mode: singleItem?.mode_name ?? "",//2673
       custbody_service_level: singleItem?.service_level ?? "",//2674
       item: data.map((e) => {
         return {
-          // custcol_mfc_line_unique_key:"",
-          taxcode: e.tax_code_internal_id ?? "",
+          ...(e.tax_code_internal_id ?? "" !== "" ? { taxcode: e.tax_code_internal_id } : {}),
           item: e.charge_cd_internal_id ?? "",
           description: e.charge_cd_desc ?? "",
           amount: +parseFloat(e.total).toFixed(2) ?? "",
@@ -442,6 +442,12 @@ async function makeJsonPayload(data) {
           custcol4: e.ref_nbr ?? "",//1168
           custcol_riv_consol_nbr: e.consol_nbr ?? "",////prod:- 2510 dev:- 2506
           custcol_finalizedby: e.finalizedby ?? "",//2614
+          custcol20: e.actual_weight ?? "",
+          custcol19: e.dest_zip ?? "",
+          custcol18: e.dest_state ?? "",
+          custcol17: e.dest_country ?? "",
+          custcol_miles_distance: e.miles ?? "",
+          custcol_chargeable_weight: e.chargeable_weight ?? "",
         };
       }),
     };
@@ -702,10 +708,10 @@ function getUpdateQuery(item, invoiceId, isSuccess = true) {
       query += ` SET internal_id = null, processed = 'F', `;
     }
     query += ` processed_date = '${today}'  
-                WHERE source_system = '${source_system}' and 
-                      invoice_nbr = '${item.invoice_nbr}' and 
-                      invoice_type = '${item.invoice_type}'and 
-                      vendor_id = '${item.vendor_id}'`;
+    WHERE source_system = '${source_system}' and
+    invoice_nbr = '${item.invoice_nbr}' and
+    invoice_type = '${item.invoice_type}'and
+    vendor_id = '${item.vendor_id}' and gc_code = '${item.gc_code}';`;
 
     return query;
   } catch (error) {
