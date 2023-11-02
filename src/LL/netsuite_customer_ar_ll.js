@@ -21,11 +21,11 @@ const source_system = "CW";
 module.exports.handler = async (event, context, callback) => {
   userConfig = getConfig(source_system, process.env);
   const checkIsRunning = await checkOldProcessIsRunning();
-  if (checkIsRunning) {
-    return {
-      hasMoreData: "running",
-    };
-  }
+  // if (checkIsRunning) {
+  //   return {
+  //     hasMoreData: "running",
+  //   };
+  // }
   let hasMoreData = "false";
   let currentCount = 0;
   totalCountPerLoop = event.hasOwnProperty("totalCountPerLoop")
@@ -107,6 +107,7 @@ module.exports.handler = async (event, context, callback) => {
 
 async function getCustomerData(connections) {
   try {
+    // get the query changed
     const query = `SELECT distinct customer_id FROM ${arDbName} 
                     where customer_internal_id is null and ( processed_date is null or
                            processed_date < '${today}')
