@@ -289,7 +289,7 @@ async function mainProcess(item, invoiceDataList) {
      * create invoice
      */
     const invoiceId = await createInvoice(jsonPayload, singleItem);
-    console.info("invoiceId",invoiceId);
+    console.info("invoiceId", invoiceId);
 
     if (queryOperator == ">") {
       queryInvoiceId = invoiceId.toString();
@@ -301,7 +301,7 @@ async function mainProcess(item, invoiceDataList) {
     const getQuery = getUpdateQuery(singleItem, invoiceId);
     return getQuery;
   } catch (error) {
-    console.error("mainprocess:error",error);
+    console.error("mainprocess:error", error);
     if (error.hasOwnProperty("customError")) {
       let getQuery = "";
       try {
@@ -393,13 +393,13 @@ async function makeJsonPayload(data) {
      */
     const payload = {
       custbody_mfc_omni_unique_key:
-      singleItem.invoice_nbr +
-      "-" +
-      singleItem.vendor_id +
-      "-" +
-      singleItem.invoice_type+
-      "-"+
-      singleItem.gc_code, //invoice_nbr, vendor_id, invoice_type,gc_code
+        singleItem.invoice_nbr +
+        "-" +
+        singleItem.vendor_id +
+        "-" +
+        singleItem.invoice_type +
+        "-" +
+        singleItem.gc_code, //invoice_nbr, vendor_id, invoice_type,gc_code
       entity: singleItem.vendor_internal_id ?? "",
       subsidiary: singleItem.subsidiary ?? "",
       trandate: singleItem.invoice_date
@@ -417,8 +417,8 @@ async function makeJsonPayload(data) {
       custbody_omni_po_hawb: singleItem.housebill_nbr ?? "",//1748  //need to check on 1756 internal id with priyanka
       custbody_mode: singleItem?.mode_name ?? "",//2673
       custbody_service_level: singleItem?.service_level ?? "",//2674
-      memo:singleItem.housebill_nbr ?? "",
-      
+      memo: singleItem.housebill_nbr ?? "",
+
       item: data.map((e) => {
         return {
           // custcol_mfc_line_unique_key:"",
@@ -444,6 +444,12 @@ async function makeJsonPayload(data) {
           custcol4: e.ref_nbr ?? "",//1168
           custcol_riv_consol_nbr: e.consol_nbr ?? "",////prod:- 2510 dev:- 2506
           custcol_finalizedby: e.finalizedby ?? "",//2614
+          custcol20: e.actual_weight ?? "",
+          custcol19: e.dest_zip ?? "",
+          custcol18: e.dest_state ?? "",
+          custcol17: e.dest_country ?? "",
+          custcol_miles_distance: e.miles ?? "",
+          custcol_chargeable_weight: e.chargeable_weight ?? "",
         };
       }),
     };
@@ -503,9 +509,9 @@ function getAuthorizationHeader(options) {
 async function createInvoice(payload, singleItem) {
   try {
     const endpoiont =
-        singleItem.invoice_type == "IN"
-          ? process.env.NETSUIT_RESTLET_VB_URL
-          : process.env.NETSUIT_RESTLET_VC_URL;
+      singleItem.invoice_type == "IN"
+        ? process.env.NETSUIT_RESTLET_VB_URL
+        : process.env.NETSUIT_RESTLET_VC_URL;
 
     const options = {
       consumer_key: userConfig.token.consumer_key,
@@ -517,7 +523,7 @@ async function createInvoice(payload, singleItem) {
       method: 'POST',
     };
 
-    const authHeader =  getAuthorizationHeader(options);
+    const authHeader = getAuthorizationHeader(options);
 
     const configApi = {
       method: options.method,
@@ -635,7 +641,7 @@ async function createInvoiceAndUpdateLineItems(invoiceId, data) {
       method: 'PUT',
     };
 
-    const authHeader =  getAuthorizationHeader(options);
+    const authHeader = getAuthorizationHeader(options);
 
     const payload = makeLineItemsJsonPayload(invoiceId, data);
     console.info('payload', JSON.stringify(payload));
