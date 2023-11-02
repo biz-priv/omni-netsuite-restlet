@@ -228,7 +228,7 @@ async function makeJsonPayload(data) {
       custbody25: singleItem.zip_code ?? "",//2698
       // custbody19: singleItem.unique_ref_nbr ?? "",//1734
       ////////////////////////custbody19: singleItem.ee_invoice ?? "",//1735
-      memo:singleItem.housebill_nbr ?? "",
+      memo: singleItem.housebill_nbr ?? "",
       item: data.map((e) => {
         return {
           // custcol_mfc_line_unique_key:"",
@@ -252,6 +252,12 @@ async function makeJsonPayload(data) {
             refName: e.controlling_stn ?? "",//1166
           },
           custcol1: e.ready_date ? e.ready_date.toISOString() : "",//1164
+          custcol20: e.actual_weight ?? "",
+          custcol19: e.dest_zip ?? "",
+          custcol18: e.dest_state ?? "",
+          custcol17: e.dest_country ?? "",
+          custcol_miles_distance: e.miles ?? "",
+          custcol_chargeable_weight: e.chargeable_weight ?? "",
         };
       }),
     };
@@ -323,7 +329,7 @@ async function createInvoice(payload, singleItem) {
       method: 'POST',
     };
 
-    const authHeader =  getAuthorizationHeader(options);
+    const authHeader = getAuthorizationHeader(options);
 
     const configApi = {
       method: options.method,
@@ -339,7 +345,7 @@ async function createInvoice(payload, singleItem) {
 
     const response = await axios.request(configApi);
     console.info("response", response.status);
-  
+
     if (response.status === 200 && response.data.status === 'Success') {
       return response.data.id;
     } else {

@@ -269,7 +269,7 @@ async function mainProcess(item, invoiceDataList) {
       return (
         e.invoice_nbr == item.invoice_nbr &&
         e.vendor_id == item.vendor_id &&
-        e.invoice_type == item.invoice_type 
+        e.invoice_type == item.invoice_type
       );
     });
     console.log("dataList", dataList.length);
@@ -288,7 +288,7 @@ async function mainProcess(item, invoiceDataList) {
      * create invoice
      */
     const invoiceId = await createInvoice(jsonPayload, singleItem);
-    console.log("invoiceId",invoiceId);
+    console.log("invoiceId", invoiceId);
 
     if (queryOperator == ">") {
       queryInvoiceId = invoiceId.toString();
@@ -300,7 +300,7 @@ async function mainProcess(item, invoiceDataList) {
     const getQuery = getUpdateQuery(singleItem, invoiceId);
     return getQuery;
   } catch (error) {
-    console.log("mainprocess:error",error);
+    console.log("mainprocess:error", error);
     if (error.hasOwnProperty("customError")) {
       let getQuery = "";
       try {
@@ -333,14 +333,14 @@ async function mainProcess(item, invoiceDataList) {
 async function getDataGroupBy(connections) {
   try {
 
-    const query =  `SELECT invoice_nbr, vendor_id, invoice_type, count(*) as tc FROM ${apDbName} 
+    const query = `SELECT invoice_nbr, vendor_id, invoice_type, count(*) as tc FROM ${apDbName} 
     WHERE  ((internal_id is null and processed is null and vendor_internal_id is not null) or
     (vendor_internal_id is not null and processed ='F' and processed_date < '${today}'))
     and source_system = '${source_system}' and invoice_nbr != ''
     GROUP BY invoice_nbr, vendor_id, invoice_type
     having tc ${queryOperator} ${lineItemPerProcess} 
     limit ${totalCountPerLoop + 1}`;
-    console.log("query", query,totalCountPerLoop);
+    console.log("query", query, totalCountPerLoop);
 
     const [rows] = await connections.execute(query);
     const result = rows;
@@ -432,6 +432,12 @@ async function makeJsonPayload(data) {
           custcol4: e.ref_nbr ?? "",
           custcol_riv_consol_nbr: e.consol_nbr ?? "",
           custcol_finalizedby: e.finalizedby ?? "", //prod:-2614  dev:-2511
+          custcol20: e.actual_weight ?? "",
+          custcol19: e.dest_zip ?? "",
+          custcol18: e.dest_state ?? "",
+          custcol17: e.dest_country ?? "",
+          custcol_miles_distance: e.miles ?? "",
+          custcol_chargeable_weight: e.chargeable_weight ?? "",
         };
       }),
     };
@@ -490,9 +496,9 @@ function getAuthorizationHeader(options) {
 async function createInvoice(payload, singleItem) {
   try {
     const endpoiont =
-        singleItem.invoice_type == "IN"
-          ? process.env.NETSUIT_RESTLET_VB_URL
-          : process.env.NETSUIT_RESTLET_VC_URL;
+      singleItem.invoice_type == "IN"
+        ? process.env.NETSUIT_RESTLET_VB_URL
+        : process.env.NETSUIT_RESTLET_VC_URL;
 
     const options = {
       consumer_key: userConfig.token.consumer_key,
@@ -504,7 +510,7 @@ async function createInvoice(payload, singleItem) {
       method: 'POST',
     };
 
-    const authHeader =  getAuthorizationHeader(options);
+    const authHeader = getAuthorizationHeader(options);
 
     const configApi = {
       method: options.method,
@@ -656,7 +662,7 @@ async function createInvoiceAndUpdateLineItems(invoiceId, data) {
     }
   } catch (error) {
     console.log('error:createInvoice:main:catch', error);
-   if (error.response) {
+    if (error.response) {
       throw {
         customError: true,
         msg: error.msg.replace(/'/g, '`'),

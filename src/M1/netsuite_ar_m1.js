@@ -97,7 +97,7 @@ async function mainProcess(item, invoiceDataList) {
      */
     const dataList = invoiceDataList.filter((e) => {
       return (
-        e.invoice_nbr == item.invoice_nbr && 
+        e.invoice_nbr == item.invoice_nbr &&
         e.invoice_type == item.invoice_type &&
         e.subsidiary == item.subsidiary
       );
@@ -201,8 +201,8 @@ async function makeJsonPayload(data) {
         "-" +
         singleItem.customer_id +
         "-" +
-        singleItem.invoice_type+
-        "-"+
+        singleItem.invoice_type +
+        "-" +
         singleItem.subsidiary, //invoice_nbr,customer_id, invoice_type,subsidiary
       tranid: singleItem.invoice_nbr ?? "",
       trandate: singleItem.invoice_date
@@ -245,6 +245,12 @@ async function makeJsonPayload(data) {
             refName: e.controlling_stn ?? "",
           },
           custcol1: e.ready_date ? e.ready_date.toISOString() : "",
+          custcol20: e.actual_weight ?? "",
+          custcol19: e.dest_zip ?? "",
+          custcol18: e.dest_state ?? "",
+          custcol17: e.dest_country ?? "",
+          custcol_miles_distance: e.miles ?? "",
+          custcol_chargeable_weight: e.chargeable_weight ?? "",
         };
       }),
     };
@@ -313,7 +319,7 @@ async function createInvoice(payload, singleItem) {
       method: 'POST',
     };
 
-    const authHeader =  getAuthorizationHeader(options);
+    const authHeader = getAuthorizationHeader(options);
 
     const configApi = {
       method: options.method,
@@ -329,7 +335,7 @@ async function createInvoice(payload, singleItem) {
 
     const response = await axios.request(configApi);
     console.info("response", response.status);
-  
+
     if (response.status === 200 && response.data.status === 'Success') {
       return response.data.id;
     } else {
