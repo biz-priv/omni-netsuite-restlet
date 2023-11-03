@@ -18,7 +18,7 @@ let connections = "";
 
 const arDbNamePrev = process.env.DATABASE_NAME;
 const arDbName = arDbNamePrev + "interface_ar";
-const source_system = "CW";
+const source_system = "LL";
 let totalCountPerLoop = 20;
 const today = getCustomDate();
 
@@ -75,13 +75,13 @@ module.exports.handler = async (event, context, callback) => {
     if (currentCount > totalCountPerLoop) {
       hasMoreData = "true";
     } else {
-      await triggerReportLambda(process.env.NS_RESTLET_INVOICE_REPORT, "CW_AR");
+      await triggerReportLambda(process.env.NS_RESTLET_INVOICE_REPORT, "LL_AR");
       await startNextStep();
       hasMoreData = "false";
     }
     return { hasMoreData };
   } catch (error) {
-    await triggerReportLambda(process.env.NS_RESTLET_INVOICE_REPORT, "CW_AR");
+    await triggerReportLambda(process.env.NS_RESTLET_INVOICE_REPORT, "LL_AR");
     await startNextStep();
     return { hasMoreData: "false" };
   }
@@ -113,7 +113,8 @@ async function mainProcess(item, invoiceDataList) {
      * Make Json payload
      */
     const jsonPayload = await makeJsonPayload(dataList);
-
+    console.log("payload", jsonPayload);
+    return
 
     /**
      * create Netsuit Invoice
@@ -270,7 +271,7 @@ async function makeJsonPayload(data) {
     await sendDevNotification(
       source_system,
       "AR",
-      "netsuite_ar_cw payload error",
+      "netsuite_ar_ll payload error",
       data[0],
       error
     );
@@ -410,7 +411,7 @@ async function updateInvoiceId(connections, query) {
       await sendDevNotification(
         source_system,
         "AR",
-        "netsuite_ar_cw updateInvoiceId",
+        "netsuite_ar_ll updateInvoiceId",
         "Invoice is created But failed to update internal_id " + element,
         error
       );

@@ -16,16 +16,16 @@ const today = getCustomDate();
 
 const arDbNamePrev = process.env.DATABASE_NAME;
 const arDbName = arDbNamePrev + "interface_ar";
-const source_system = "CW";
+const source_system = "LL";
 
 module.exports.handler = async (event, context, callback) => {
   userConfig = getConfig(source_system, process.env);
   const checkIsRunning = await checkOldProcessIsRunning();
-  // if (checkIsRunning) {
-  //   return {
-  //     hasMoreData: "running",
-  //   };
-  // }
+  if (checkIsRunning) {
+    return {
+      hasMoreData: "running",
+    };
+  }
   let hasMoreData = "false";
   let currentCount = 0;
   totalCountPerLoop = event.hasOwnProperty("totalCountPerLoop")
@@ -81,7 +81,7 @@ module.exports.handler = async (event, context, callback) => {
           await sendDevNotification(
             source_system,
             "AR",
-            "netsuite_customer_ar_cw for loop customer_id" + customer_id,
+            "netsuite_customer_ar_ll for loop customer_id" + customer_id,
             singleItem,
             error
           );
@@ -107,8 +107,7 @@ module.exports.handler = async (event, context, callback) => {
 
 async function getCustomerData(connections) {
   try {
-    // get the query changed
-    // const query = 'select customer id from';
+
     const query = `SELECT distinct customer_id FROM ${arDbName} 
                     where customer_internal_id is null and ( processed_date is null or
                            processed_date < '${today}')
@@ -314,7 +313,7 @@ function getCustomDate() {
 
 async function checkOldProcessIsRunning() {
   try {
-    const customerArn = process.env.NETSUITE_AR_CW_CUSTOMER_STEP_ARN;
+    const customerArn = process.env.NETSUITE_AR_LL_CUSTOMER_STEP_ARN;
     const status = "RUNNING";
     const stepfunctions = new AWS.StepFunctions();
 
