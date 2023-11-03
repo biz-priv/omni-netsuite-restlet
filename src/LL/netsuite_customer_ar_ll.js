@@ -108,6 +108,7 @@ module.exports.handler = async (event, context, callback) => {
 async function getCustomerData(connections) {
   try {
     // get the query changed
+    // const query = 'select customer id from';
     const query = `SELECT distinct customer_id FROM ${arDbName} 
                     where customer_internal_id is null and ( processed_date is null or
                            processed_date < '${today}')
@@ -270,7 +271,7 @@ async function putCustomer(connections, customerData, customer_id) {
     });
     tableStr = objKyes.join(",");
 
-    const upsertQuery = `INSERT INTO ${arDbNamePrev}netsuit_customer (${tableStr})
+    const upsertQuery = `INSERT INTO ${arDbNamePrev}netsuit_customer_tharun_backup (${tableStr})
                         VALUES (${valueStr}) ON DUPLICATE KEY
                         UPDATE ${updateStr};`;
     console.info("query", upsertQuery);

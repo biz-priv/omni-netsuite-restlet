@@ -5,8 +5,7 @@ function:
     - { Ref: CommonNetsuiteLibsLambdaLayer }
   name: ${self:service}-customer-ar-ll-${self:provider.stage}
   description: LL Restlet Netsuite customer AR api service - ${self:provider.stage}
-  # runtime: nodejs18.x
-  runtime: nodejs12.x
+  runtime: nodejs18.x
   memorySize: 2048
   timeout: 900
   package:
