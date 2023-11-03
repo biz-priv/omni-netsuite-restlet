@@ -27,7 +27,7 @@
   },
   "devDependencies": {
     "serverless": "2.11.1",
-    "serverless-offline": "^8.8.0",
+    "serverless-offline": "^8.8.1",
     "serverless-prune-plugin": "^2.0.1",
     "serverless-pseudo-parameters": "2.6.1",
     "serverless-step-functions": "2.32.0"

@@ -23,6 +23,10 @@ const mailList = {
     CW: process.env.NETSUIT_AP_ERROR_EMAIL_TO,
     TR: process.env.NETSUIT_AP_ERROR_EMAIL_TO,
   },
+  LL: {
+    AR: process.env.NETSUIT_AR_ERROR_EMAIL_TO,
+    AP: process.env.NETSUIT_AP_ERROR_EMAIL_TO,
+  }
 };
 
 module.exports.handler = async (event, context, callback) => {
@@ -154,6 +158,10 @@ async function getReportData(
         mainQuery = `select ${dbname}interface_ap.*, CONCAT('Vendor not found. (vendor_id: ', CAST(vendor_id AS CHAR), ') Subsidiary: ', subsidiary) AS error_msg
         from ${dbname}interface_ap where source_system = '${sourceSystem}' and processed ='F' and vendor_id in (${queryVenErr})
         GROUP BY invoice_nbr, vendor_id, invoice_type, gc_code, subsidiary, source_system;`;
+      } else if (sourceSystem == "LL") {
+        mainQuery = `select ${dbname}interface_ap.*, CONCAT('Vendor not found. (vendor_id: ', CAST(vendor_id AS CHAR), ') Subsidiary: ', subsidiary) AS error_msg
+        from ${dbname}interface_ap where source_system = '${sourceSystem}' and processed ='F' and vendor_id in (${queryVenErr})
+        GROUP BY invoice_nbr, vendor_id, invoice_type, gc_code, subsidiary, source_system;`;
       }
       console.info("mainQuery", mainQuery);
       const data = await executeQuery(connections, sourceSystem, mainQuery);
@@ -212,6 +220,10 @@ async function getReportData(
         from ${dbname}interface_ar where source_system = '${sourceSystem}' and processed ='F' and customer_id in (${queryCuErr})
         GROUP BY invoice_nbr, invoice_type, gc_code, subsidiary`;
       } else if (sourceSystem == "TR") {
+        mainQuery = `select ${dbname}interface_ar.*, CONCAT('Customer not found. (customer_id: ', CAST(customer_id AS CHAR), ') Subsidiary: ', subsidiary) AS error_msg
+        from ${dbname}interface_ar where source_system = '${sourceSystem}' and processed ='F' and customer_id in (${queryCuErr})
+        GROUP BY invoice_nbr, invoice_type, gc_code, subsidiary`;
+      }else if (sourceSystem == "LL") {
         mainQuery = `select ${dbname}interface_ar.*, CONCAT('Customer not found. (customer_id: ', CAST(customer_id AS CHAR), ') Subsidiary: ', subsidiary) AS error_msg
         from ${dbname}interface_ar where source_system = '${sourceSystem}' and processed ='F' and customer_id in (${queryCuErr})
         GROUP BY invoice_nbr, invoice_type, gc_code, subsidiary`;
