@@ -61,7 +61,8 @@ provider:
     NETSUIT_AR_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/to}
     NS_RESTLET_INVOICE_REPORT: ${self:service}-invoice-report-${self:provider.stage}
     NS_BASE_URL: ${ssm:/${self:service}/${self:provider.stage}/netsuiteBaseUrl}
-
+    NS_BASE_URL_Sb1: ${ssm:/${self:service}/${self:provider.stage}/netsuiteBaseUrlSb1}
+    
 plugins:
   - serverless-offline
   - serverless-prune-plugin
