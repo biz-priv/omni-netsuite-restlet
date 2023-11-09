@@ -3,7 +3,7 @@ function:
   handler: src/LL/netsuite_ar_ll.handler
   layers:
     - { Ref: CommonNetsuiteLibsLambdaLayer }
-  name: ${self:service}-ar-LL-${self:provider.stage}
+  name: ${self:service}-ar-ll-${self:provider.stage}
   description: LL Restlet Netsuite AR api service - ${self:provider.stage}
   runtime: nodejs18.x
   memorySize: 2048
