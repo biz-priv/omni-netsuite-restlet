@@ -16,6 +16,7 @@ const today = getCustomDate();
 
 const arDbNamePrev = process.env.DATABASE_NAME;
 const arDbName = "dw_dev.interface_ar";
+// const arDbName = arDbNamePrev + "interface_ar";
 const source_system = "LL";
 
 module.exports.handler = async (event, context, callback) => {
@@ -53,16 +54,16 @@ module.exports.handler = async (event, context, callback) => {
          * get customer from netsuit
          */
         const customerData = await getcustomer(customer_id);
-        console.info("customerData", JSON.stringify(customerData));
+        console.info("customerData", customerData);
         /**
          * Update customer details into DB
          */
-
         await putCustomer(connections, customerData, customer_id);
         console.info("count", i + 1);
       } catch (error) {
         let singleItem = "";
         try {
+          console.log("err",error);
           if (error.hasOwnProperty("customError")) {
             /**
              * update error
@@ -77,11 +78,11 @@ module.exports.handler = async (event, context, callback) => {
             );
           }
         } catch (error) {
-          console.error("err", error);
+          console.log("err", error);
           await sendDevNotification(
             source_system,
             "AR",
-            "netsuite_customer_ar_ll for loop customer_id" + customer_id,
+            "netsuite_customer_ar_m1 for loop customer_id" + customer_id,
             singleItem,
             error
           );
@@ -108,10 +109,10 @@ module.exports.handler = async (event, context, callback) => {
 async function getCustomerData(connections) {
   try {
     const query = `SELECT distinct customer_id FROM ${arDbName} 
-                    where customer_internal_id is null and ( processed_date is null or
-                           processed_date < '${today}')
-                          and source_system = '${source_system}'
-                          limit ${totalCountPerLoop + 1}`;
+    where ((customer_internal_id is null and processed_date is null) or
+          (customer_internal_id is null and processed_date < '${today}'))
+          and source_system = '${source_system}'
+          limit ${totalCountPerLoop + 1}`;
 
     console.info("query", query);
     const [rows] = await connections.execute(query);
@@ -130,7 +131,7 @@ async function getDataByCustomerId(connections, cus_id) {
     const query = `SELECT * FROM ${arDbName} 
                     where source_system = '${source_system}' and customer_id = '${cus_id}' 
                     limit 1`;
-    console.info("query", query);
+    console.log("query", query);
     const [rows] = await connections.execute(query);
     const result = rows;
     if (!result || result.length == 0) {
@@ -142,7 +143,6 @@ async function getDataByCustomerId(connections, cus_id) {
   }
 }
 
-
 async function getcustomer(entityId) {
   try {
     const options = {
@@ -151,18 +151,9 @@ async function getcustomer(entityId) {
       token: userConfig.token.token_key,
       token_secret: userConfig.token.token_secret,
       realm: userConfig.account,
-      url: `${process.env.NS_BASE_URL_SB1}&deploy=1&custscript_mfc_entity_eid=${entityId}`,
+      url: `${process.env.NS_BASE_URL}&deploy=1&custscript_mfc_entity_eid=${entityId}`,
       method: "GET",
     };
-    // const options = {
-    //   consumer_key: 'ece3501945c67f84d09c1ce50e6fffe806d4dc553ea9894b586dc6abdb230809',
-    //   consumer_secret_key: '56bafee4f285a742d208c122cea5e0da328fd7e2810091c048ac350c1ae875c7',
-    //   token: '962bbe698cdaebb4e066daf2a71de998ab7971102a5b4f1a4e86998a9e885d42',
-    //   token_secret: '32d1cf73c4044bdc9ffce26d65f4a6d4e087e2041442cbe9d175547d184a2253',
-    //   realm: '1238234_SB1',
-    //   url: `${process.env.NS_BASE_URL_SB1}&deploy=1&custscript_mfc_entity_eid=${entityId}`,
-    //   method: "GET",
-    // };
     const authHeader = getAuthorizationHeader(options);
 
     const configApi = {
@@ -175,13 +166,12 @@ async function getcustomer(entityId) {
     };
 
     const response = await axios.request(configApi);
-    console.info("response", response);
+    console.info("response", response.status);
 
     const recordList = response.data[0];
-    console.log("recordList",recordList);
+    // console.log("recordList:",recordList);
     if (recordList && recordList.internal_id_value) {
       const record = recordList;
-      console.log("inside the if block")     
       return record;
     } else {
       throw {
@@ -245,7 +235,6 @@ async function putCustomer(connections, customerData, customer_id) {
       printTransactions: customerData?.printTransactions_value ?? "",
       unbilledOrders: customerData?.unbilledOrders_value ?? "",
       shipComplete: customerData?.shipComplete_value ?? "",
-
       creditHoldOverride_id: customerData?.creditHoldOverride_id_value,
       creditHoldOverride_refName: customerData?.creditHoldOverride_id_text,
       emailPreference_id: customerData?.emailPreference_id_value,
@@ -261,7 +250,7 @@ async function putCustomer(connections, customerData, customer_id) {
       terms_refName: customerData?.terms_id_text,
       created_at: moment().format("YYYY-MM-DD"),
     };
-
+   
 
     let tableStr = "";
     let valueStr = "";
@@ -283,7 +272,7 @@ async function putCustomer(connections, customerData, customer_id) {
     const upsertQuery = `INSERT INTO ${arDbNamePrev}netsuit_customer (${tableStr})
                         VALUES (${valueStr}) ON DUPLICATE KEY
                         UPDATE ${updateStr};`;
-    console.info("query", upsertQuery);
+    console.log("query", upsertQuery);
     await connections.execute(upsertQuery);
 
     const updateQuery = `UPDATE ${arDbName} SET 
@@ -291,7 +280,7 @@ async function putCustomer(connections, customerData, customer_id) {
                     customer_internal_id = '${customer_internal_id}', 
                     processed_date = '${today}' 
                     WHERE customer_id = '${customer_id}' and source_system = '${source_system}' and customer_internal_id is null`;
-    console.info("updateQuery", updateQuery);
+    console.log("updateQuery", updateQuery);
     await connections.execute(updateQuery);
   } catch (error) {
     console.error(error);
@@ -305,7 +294,7 @@ async function updateFailedRecords(connections, cus_id) {
                   SET processed = 'F',
                   processed_date = '${today}' 
                   WHERE customer_id = '${cus_id}' and source_system = '${source_system}' and customer_internal_id is null`;
-    console.info("query", query);
+    console.log("query", query);
     const result = await connections.execute(query);
     return result;
   } catch (error) { }
@@ -319,8 +308,6 @@ function getCustomDate() {
   return `${ye}-${mo}-${da}`;
 }
 
-
-
 async function checkOldProcessIsRunning() {
   try {
     const customerArn = process.env.NETSUITE_AR_LL_CUSTOMER_STEP_ARN;
@@ -333,7 +320,7 @@ async function checkOldProcessIsRunning() {
       maxResults: 2,
     }).promise();
 
-    console.info("AR listExecutions data", data);
+    console.log("AR listExecutions data", data);
     const cusExcList = data.executions;
 
     if (
@@ -341,7 +328,7 @@ async function checkOldProcessIsRunning() {
       cusExcList.length === 2 &&
       cusExcList[1].status === status
     ) {
-      console.info("AR running");
+      console.log("AR running");
       return true;
     } else {
       return false;
