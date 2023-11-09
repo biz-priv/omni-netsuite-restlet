@@ -15,7 +15,8 @@ let userConfig = "";
 let connections = "";
 
 const apDbNamePrev = process.env.DATABASE_NAME;
-const apDbName = apDbNamePrev + "interface_ap";
+//const apDbName = apDbNamePrev + "interface_ap";
+const apDbName="dw_dev.interface_ap"
 const source_system = "LL";
 
 const today = getCustomDate();
@@ -283,7 +284,7 @@ async function mainProcess(item, invoiceDataList) {
      * Make Json payload
      */
     const jsonPayload = await makeJsonPayload(dataList);
-
+    console.log("JSONPayload",JSON.stringify(jsonPayload))
     /**
      * create invoice
      */
@@ -493,16 +494,24 @@ async function createInvoice(payload, singleItem) {
         singleItem.invoice_type == "IN"
           ? process.env.NETSUIT_RESTLET_VB_URL
           : process.env.NETSUIT_RESTLET_VC_URL;
-
-    const options = {
-      consumer_key: userConfig.token.consumer_key,
-      consumer_secret_key: userConfig.token.consumer_secret,
-      token: userConfig.token.token_key,
-      token_secret: userConfig.token.token_secret,
-      realm: userConfig.account,
-      url: endpoiont,
-      method: 'POST',
-    };
+          const options = {
+            consumer_key: userConfig.token.consumer_key,
+            consumer_secret_key: userConfig.token.consumer_secret,
+            token: userConfig.token.token_key,
+            token_secret: userConfig.token.token_secret,
+            realm: userConfig.account,
+            url: endpoiont,
+            method: 'POST',
+          };
+    // const options = {
+    //   consumer_key: 'ece3501945c67f84d09c1ce50e6fffe806d4dc553ea9894b586dc6abdb230809',
+    //   consumer_secret_key: '56bafee4f285a742d208c122cea5e0da328fd7e2810091c048ac350c1ae875c7',
+    //   token: '962bbe698cdaebb4e066daf2a71de998ab7971102a5b4f1a4e86998a9e885d42',
+    //   token_secret: '32d1cf73c4044bdc9ffce26d65f4a6d4e087e2041442cbe9d175547d184a2253',
+    //   realm: '1238234_SB1',
+    //   url: endpoiont,
+    //   method: 'POST',
+    // };
 
     const authHeader =  getAuthorizationHeader(options);
 
@@ -518,7 +527,7 @@ async function createInvoice(payload, singleItem) {
     };
 
     const response = await axios.request(configApi);
-
+    console.log("response",response);
     if (response.status === 200 && response.data.status === 'Success') {
       return response.data.id;
     } else {

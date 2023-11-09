@@ -15,8 +15,8 @@ let totalCountPerLoop = 5;
 const today = getCustomDate();
 
 const arDbNamePrev = process.env.DATABASE_NAME;
-const arDbName = arDbNamePrev + "interface_ar";
-const source_system = "CW";
+const arDbName = "dw_dev.interface_ar";
+const source_system = "LL";
 
 module.exports.handler = async (event, context, callback) => {
   userConfig = getConfig(source_system, process.env);
@@ -81,7 +81,7 @@ module.exports.handler = async (event, context, callback) => {
           await sendDevNotification(
             source_system,
             "AR",
-            "netsuite_customer_ar_cw for loop customer_id" + customer_id,
+            "netsuite_customer_ar_ll for loop customer_id" + customer_id,
             singleItem,
             error
           );
@@ -151,9 +151,18 @@ async function getcustomer(entityId) {
       token: userConfig.token.token_key,
       token_secret: userConfig.token.token_secret,
       realm: userConfig.account,
-      url: `${process.env.NS_BASE_URL}&deploy=1&custscript_mfc_entity_eid=${entityId}`,
+      url: `${process.env.NS_BASE_URL_SB1}&deploy=1&custscript_mfc_entity_eid=${entityId}`,
       method: "GET",
     };
+    // const options = {
+    //   consumer_key: 'ece3501945c67f84d09c1ce50e6fffe806d4dc553ea9894b586dc6abdb230809',
+    //   consumer_secret_key: '56bafee4f285a742d208c122cea5e0da328fd7e2810091c048ac350c1ae875c7',
+    //   token: '962bbe698cdaebb4e066daf2a71de998ab7971102a5b4f1a4e86998a9e885d42',
+    //   token_secret: '32d1cf73c4044bdc9ffce26d65f4a6d4e087e2041442cbe9d175547d184a2253',
+    //   realm: '1238234_SB1',
+    //   url: `${process.env.NS_BASE_URL_SB1}&deploy=1&custscript_mfc_entity_eid=${entityId}`,
+    //   method: "GET",
+    // };
     const authHeader = getAuthorizationHeader(options);
 
     const configApi = {
@@ -166,11 +175,13 @@ async function getcustomer(entityId) {
     };
 
     const response = await axios.request(configApi);
-    console.info("response", response.status);
+    console.info("response", response);
 
     const recordList = response.data[0];
+    console.log("recordList",recordList);
     if (recordList && recordList.internal_id_value) {
       const record = recordList;
+      console.log("inside the if block")     
       return record;
     } else {
       throw {

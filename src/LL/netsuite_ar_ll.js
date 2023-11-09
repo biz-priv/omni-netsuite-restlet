@@ -17,8 +17,8 @@ let userConfig = "";
 let connections = "";
 
 const arDbNamePrev = process.env.DATABASE_NAME;
-const arDbName = arDbNamePrev + "interface_ar";
-const source_system = "CW";
+const arDbName = "dw_dev.interface_ar";
+const source_system = "LL";
 let totalCountPerLoop = 20;
 const today = getCustomDate();
 
@@ -270,7 +270,7 @@ async function makeJsonPayload(data) {
     await sendDevNotification(
       source_system,
       "AR",
-      "netsuite_ar_cw payload error",
+      "netsuite_ar_ll payload error",
       data[0],
       error
     );
@@ -317,8 +317,8 @@ async function createInvoice(payload, singleItem) {
   try {
     const endpoiont =
       singleItem.invoice_type == "IN"
-        ? process.env.NETSUIT_RESTLET_INV_URL
-        : process.env.NETSUIT_RESTLET_CM_URL;
+      ? process.env.NETSUIT_RESTLET_INV_URL
+      : process.env.NETSUIT_RESTLET_CM_URL;
 
     const options = {
       consumer_key: userConfig.token.consumer_key,
@@ -329,6 +329,15 @@ async function createInvoice(payload, singleItem) {
       url: endpoiont,
       method: 'POST',
     };
+    // const options = {
+    //   consumer_key: 'ece3501945c67f84d09c1ce50e6fffe806d4dc553ea9894b586dc6abdb230809',
+    //   consumer_secret_key: '56bafee4f285a742d208c122cea5e0da328fd7e2810091c048ac350c1ae875c7',
+    //   token: '962bbe698cdaebb4e066daf2a71de998ab7971102a5b4f1a4e86998a9e885d42',
+    //   token_secret: '32d1cf73c4044bdc9ffce26d65f4a6d4e087e2041442cbe9d175547d184a2253',
+    //   realm: '1238234_SB1',
+    //   url:  `${process.env.NS_BASE_URL_SB1}&deploy=1&custscript_mfc_entity_eid=${entityId}`,
+    //   method: 'POST',
+    // };
 
     const authHeader =  getAuthorizationHeader(options);
 
@@ -343,7 +352,7 @@ async function createInvoice(payload, singleItem) {
       data: JSON.stringify(payload),
     };
 
-
+    console.log("Payload Data",JSON.stringify(payload));
     const response = await axios.request(configApi);
     console.info("response", response.status);
   
@@ -410,7 +419,7 @@ async function updateInvoiceId(connections, query) {
       await sendDevNotification(
         source_system,
         "AR",
-        "netsuite_ar_cw updateInvoiceId",
+        "netsuite_ar_ll updateInvoiceId",
         "Invoice is created But failed to update internal_id " + element,
         error
       );

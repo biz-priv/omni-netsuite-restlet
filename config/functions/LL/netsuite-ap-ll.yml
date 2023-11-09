@@ -13,6 +13,6 @@ function:
       - src/LL/netsuite_ap_ll.js
       - Helpers/**
   environment:
-    NETSUIT_RESTLET_VB_URL: ${ssm:/omni-dw/${self:provider.stage}/vendorbill/apiEndpoint}
-    NETSUIT_RESTLET_VC_URL: ${ssm:/omni-dw/${self:provider.stage}/vendorcredit/apiEndpoint}
+    NETSUIT_RESTLET_VB_URL: ${ssm:/omni-dw/${self:provider.stage}/vendorbill/apiEndpointSb1}
+    NETSUIT_RESTLET_VC_URL: ${ssm:/omni-dw/${self:provider.stage}/vendorcredit/apiEndpointSb1}
     FUNCTION_NAME: ${self:service}-ap-ll-${self:provider.stage}

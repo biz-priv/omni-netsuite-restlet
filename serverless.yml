@@ -51,6 +51,10 @@ provider:
     NETSUIT_MCL_CONSUMER_SECRET: ${ssm:/omni-dw/${self:provider.stage}/netsuitMCL/authConfig/consumerSecret~true}
     NETSUIT_MCL_TOKEN_KEY: ${ssm:/omni-dw/${self:provider.stage}/netsuitMCL/authConfig/tokenKeyMCL~true}
     NETSUIT_MCL_TOKEN_SECRET: ${ssm:/omni-dw/${self:provider.stage}/netsuitMCL/authConfig/tokenSecretMCL~true}
+    NETSUIT_LL_CONSUMER_KEY: ${ssm:/omni-dw/${self:provider.stage}/netsuitLL/authConfig/consumerKeyLL}
+    NETSUIT_LL_CONSUMER_SECRET: ${ssm:/omni-dw/${self:provider.stage}/netsuitLL/authConfig/consumerSecretLL}
+    NETSUIT_LL_TOKEN_KEY: ${ssm:/omni-dw/${self:provider.stage}/netsuitLL/authConfig/tokenKeyLL}
+    NETSUIT_LL_TOKEN_SECRET: ${ssm:/omni-dw/${self:provider.stage}/netsuitLL/authConfig/tokenSecretLL}
 
     NETSUIT_AR_WDSLPATH: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/authConfig/wdslPath} 
     NETSUIT_AR_ERROR_TABLE: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/dynamo/errorTable}
@@ -61,6 +65,7 @@ provider:
     NETSUIT_AR_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/to}
     NS_RESTLET_INVOICE_REPORT: ${self:service}-invoice-report-${self:provider.stage}
     NS_BASE_URL: ${ssm:/${self:service}/${self:provider.stage}/netsuiteBaseUrl}
+    NS_BASE_URL_SB1: ${ssm:/${self:service}/${self:provider.stage}/netsuiteBaseUrlSb1}
 
 plugins:
   - serverless-offline
@@ -95,7 +100,7 @@ functions:
   netsuite-customer-ar-tr-restlet: ${file(config/functions/TR/netsuite-customer-ar-tr.yml):function}
   netsuite-ap-tr-restlet: ${file(config/functions/TR/netsuite-ap-tr.yml):function}
   netsuite-vendor-ap-tr-restlet: ${file(config/functions/TR/netsuite-vendor-ap-tr.yml):function}
-    #LL lambda functions
+  #LL lambda functions
   netsuite-ar-ll-restlet: ${file(config/functions/LL/netsuite-ar-ll.yml):function}
   netsuite-customer-ar-ll-restlet: ${file(config/functions/LL/netsuite-customer-ar-ll.yml):function}
   netsuite-ap-ll-restlet: ${file(config/functions/LL/netsuite-ap-ll.yml):function}
