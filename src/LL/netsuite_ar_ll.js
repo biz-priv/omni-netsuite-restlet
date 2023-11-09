@@ -73,13 +73,13 @@ module.exports.handler = async (event, context, callback) => {
     if (currentCount > totalCountPerLoop) {
       hasMoreData = "true";
     } else {
-      await triggerReportLambda(process.env.NS_RESTLET_INVOICE_REPORT, "M1_AR");
+      await triggerReportLambda(process.env.NS_RESTLET_INVOICE_REPORT, "LL_AR");
       await startNextStep();
       hasMoreData = "false";
     }
     return { hasMoreData };
   } catch (error) {
-    await triggerReportLambda(process.env.NS_RESTLET_INVOICE_REPORT, "M1_AR");
+    await triggerReportLambda(process.env.NS_RESTLET_INVOICE_REPORT, "LL_AR");
     await startNextStep();
     return { hasMoreData: "false" };
   }
