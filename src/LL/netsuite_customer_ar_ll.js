@@ -323,7 +323,7 @@ function getCustomDate() {
 
 async function checkOldProcessIsRunning() {
   try {
-    const customerArn = process.env.NETSUITE_AR_CW_CUSTOMER_STEP_ARN;
+    const customerArn = process.env.NETSUITE_AR_LL_CUSTOMER_STEP_ARN;
     const status = "RUNNING";
     const stepfunctions = new AWS.StepFunctions();
 
