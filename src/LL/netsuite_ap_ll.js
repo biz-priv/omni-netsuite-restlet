@@ -747,16 +747,16 @@ async function updateInvoiceId(connections, query) {
 
 function getHardcodeData(isIntercompany = false) {
   const data = {
-    source_system: "2",
+    source_system: "7",
     class: {
       head: "9",
       line: getBusinessSegment(process.env.STAGE),
     },
     department: {
-      default: { head: "15", line: "2" },
+      default: { head: "15", line: "1" },
       intercompany: { head: "15", line: "1" },
     },
-    location: { head: "18", line: "EXT ID: Take from DB" },
+    location: { head: "415", line: "EXT ID: Take from DB" },
   };
   const departmentType = isIntercompany ? "intercompany" : "default";
   return {
