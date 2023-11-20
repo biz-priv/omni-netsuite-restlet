@@ -14,8 +14,8 @@ let userConfig = "";
 let totalCountPerLoop = 5;
 const today = getCustomDate();
 const apDbNamePrev = process.env.DATABASE_NAME;
-// const appDbNamePrev="dw_dev."
-const apDbName = "dw_dev.interface_ap";
+// const apDbName = "dw_dev.interface_ap";
+const apDbName = apDbNamePrev + "interface_ap";
 const source_system = "LL";
 
 module.exports.handler = async (event, context, callback) => {

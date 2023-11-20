@@ -15,8 +15,8 @@ let totalCountPerLoop = 5;
 const today = getCustomDate();
 
 const arDbNamePrev = process.env.DATABASE_NAME;
-const arDbName = "dw_dev.interface_ar";
-// const arDbName = arDbNamePrev + "interface_ar";
+// const arDbName = "dw_dev.interface_ar";
+const arDbName = arDbNamePrev + "interface_ar";
 const source_system = "LL";
 
 module.exports.handler = async (event, context, callback) => {
