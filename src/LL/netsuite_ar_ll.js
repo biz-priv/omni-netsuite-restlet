@@ -413,7 +413,7 @@ function getHardcodeData() {
       line: getBusinessSegment(process.env.STAGE),
     },
     department: { head: "15", line: "1" },
-    location: { head: "415", line: "EXT ID: Take from DB" },
+    location: { head: "413", line: "EXT ID: Take from DB" },
   };
   return data;
 }
