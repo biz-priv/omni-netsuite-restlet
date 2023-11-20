@@ -18,7 +18,7 @@ const arDbNamePrev = process.env.DATABASE_NAME;
 // const arDbName = "dw_dev.interface_ar";
 const arDbName = arDbNamePrev + "interface_ar";
 const source_system = "LL";
-let totalCountPerLoop = 0;
+let totalCountPerLoop = 20;
 const today = getCustomDate();
 
 module.exports.handler = async (event, context, callback) => {
@@ -111,8 +111,7 @@ async function mainProcess(item, invoiceDataList) {
      */
     const jsonPayload = await makeJsonPayload(dataList);
     console.log("jsonPayload: ", jsonPayload)
-    console.log("stringified: ", JSON.stringify(jsonPayload))
-return{}
+
     /**
      * create Netsuit Invoice
      */
@@ -153,7 +152,10 @@ return{}
 async function getDataGroupBy(connections) {
   try {
     const query = `SELECT distinct invoice_nbr,customer_id,invoice_type,subsidiary FROM ${arDbName} where
-    invoice_nbr = '0176648'`;
+    ((internal_id is null and processed is null and customer_internal_id is not null) or
+    (customer_internal_id is not null and processed ='F' and processed_date < '${today}'))
+    and source_system = '${source_system}' and invoice_nbr is not null
+    limit ${totalCountPerLoop + 1}`;
 
     console.info("query", query);
     const [rows] = await connections.execute(query);
@@ -171,7 +173,7 @@ async function getDataGroupBy(connections) {
 async function getInvoiceNbrData(connections, invoice_nbr) {
   try {
     const query = `select * from ${arDbName} where source_system = '${source_system}' 
-    and invoice_nbr = '0176648'`;
+    and invoice_nbr in (${invoice_nbr.join(",")})`;
     console.log("query", query);
 
     const executeQuery = await connections.execute(query);
