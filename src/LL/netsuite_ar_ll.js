@@ -18,7 +18,7 @@ const arDbNamePrev = process.env.DATABASE_NAME;
 // const arDbName = "dw_dev.interface_ar";
 const arDbName = arDbNamePrev + "interface_ar";
 const source_system = "LL";
-let totalCountPerLoop = 20;
+let totalCountPerLoop = 0;
 const today = getCustomDate();
 
 module.exports.handler = async (event, context, callback) => {
@@ -111,7 +111,8 @@ async function mainProcess(item, invoiceDataList) {
      */
     const jsonPayload = await makeJsonPayload(dataList);
     console.log("jsonPayload: ", jsonPayload)
-
+    console.log("stringified: ", JSON.stringify(jsonPayload))
+return{}
     /**
      * create Netsuit Invoice
      */
@@ -152,10 +153,7 @@ async function mainProcess(item, invoiceDataList) {
 async function getDataGroupBy(connections) {
   try {
     const query = `SELECT distinct invoice_nbr,customer_id,invoice_type,subsidiary FROM ${arDbName} where
-    ((internal_id is null and processed is null and customer_internal_id is not null) or
-    (customer_internal_id is not null and processed ='F' and processed_date < '${today}'))
-    and source_system = '${source_system}' and invoice_nbr is not null
-    limit ${totalCountPerLoop + 1}`;
+    invoice_nbr = '0176648'`;
 
     console.info("query", query);
     const [rows] = await connections.execute(query);
@@ -173,7 +171,7 @@ async function getDataGroupBy(connections) {
 async function getInvoiceNbrData(connections, invoice_nbr) {
   try {
     const query = `select * from ${arDbName} where source_system = '${source_system}' 
-    and invoice_nbr in (${invoice_nbr.join(",")})`;
+    and invoice_nbr = '0176648'`;
     console.log("query", query);
 
     const executeQuery = await connections.execute(query);
@@ -244,10 +242,10 @@ async function makeJsonPayload(data) {
             refName: e.controlling_stn ?? "",
           },
           custcol1: e.ready_date ? e.ready_date.toISOString() : "",
-          custcol20: e.actual_weight ?? "",//dev: custcol20  prod: custcol_actual_weight
-          custcol19: e.dest_zip ?? "",//dev: custcol19 prod: custcol_destination_on_zip
-          custcol18: e.dest_state ?? "",//dev: custcol18 prod: custcol_destination_on_state
-          custcol17: e.dest_country ?? "",//dev: custcol17 prod: custcol_destination_on_country
+          custcol_actual_weight: e.actual_weight ?? "",
+          custcol_destination_on_zip: e.dest_zip ?? "",
+          custcol_destination_on_state: e.dest_state ?? "",
+          custcol_destination_on_country: e.dest_country ?? "",
           custcol_miles_distance: e.miles ?? "",
           custcol_chargeable_weight: e.chargeable_weight ?? "",
         };
