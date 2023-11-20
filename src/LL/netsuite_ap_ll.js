@@ -759,7 +759,7 @@ function getHardcodeData(isIntercompany = false) {
       line: getBusinessSegment(process.env.STAGE),
     },
     department: {
-      default: { head: "15", line: "1" },
+      default: { head: "15", line: "2" },
       intercompany: { head: "15", line: "1" },
     },
     location: { head: "413", line: "EXT ID: Take from DB" },
