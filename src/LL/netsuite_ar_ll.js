@@ -378,7 +378,7 @@ function getUpdateQuery(item, invoiceId, isSuccess = true) {
     }
     query += `processed_date = '${today}' 
               WHERE source_system = '${source_system}' and invoice_nbr = '${item.invoice_nbr}' 
-              and invoice_type = '${item.invoice_type}';`;
+              and invoice_type = '${item.invoice_type}' and customer_id = '${item.customer_id}';`;
     console.log("query", query);
     return query;
   } catch (error) {

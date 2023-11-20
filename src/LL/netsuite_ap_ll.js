@@ -410,7 +410,6 @@ async function makeJsonPayload(data) {
       custbody_service_level: singleItem?.service_level ?? "",
       item: data.map((e) => {
         return {
-          // custcol_mfc_line_unique_key:"",
           taxcode: e.tax_code_internal_id ?? "",
           item: e.charge_cd_internal_id ?? "",
           description: e.charge_cd_desc ?? "",
