@@ -202,9 +202,7 @@ async function makeJsonPayload(data) {
         "-" +
         singleItem.customer_id +
         "-" +
-        singleItem.invoice_type+
-        "-"+
-        singleItem.subsidiary, //invoice_nbr,customer_id, invoice_type,subsidiary
+        singleItem.invoice_type, //invoice_nbr,customer_id, invoice_type
       tranid: singleItem.invoice_nbr ?? "",
       trandate: singleItem.invoice_date
         ? dateFormat(singleItem.invoice_date)
@@ -213,20 +211,20 @@ async function makeJsonPayload(data) {
       class: hardcode.class.head,
       location: hardcode.location.head,
       custbody_source_system: hardcode.source_system,
+      custbodymfc_tmsinvoice: singleItem.invoice_nbr ?? "",
       entity: singleItem.customer_internal_id ?? "",
       subsidiary: singleItem.subsidiary ?? "",
       currency: singleItem.currency_internal_id ?? "",
-      otherrefnum: singleItem.order_ref ?? "",
+      otherrefnum: singleItem.customer_po ?? "",
       custbody_mode: singleItem?.mode_name ?? "",
       custbody_service_level: singleItem?.service_level ?? "",
       custbody18: singleItem.finalized_date ?? "",
       custbody9: singleItem.housebill_nbr ?? "",
       custbody17: singleItem.email ?? "",
       custbody25: singleItem.zip_code ?? "",
-      custbody29: singleItem.rfiemail ?? "",//dev :custbody29
+      custbody29: singleItem.rfiemail ?? "",//dev :custbody29 prod: custbody27
       item: data.map((e) => {
         return {
-          // custcol_mfc_line_unique_key:"",
           item: e.charge_cd_internal_id ?? "",
           description: e?.charge_cd_desc ?? "",
           amount: +parseFloat(e.total).toFixed(2) ?? "",
@@ -246,6 +244,12 @@ async function makeJsonPayload(data) {
             refName: e.controlling_stn ?? "",
           },
           custcol1: e.ready_date ? e.ready_date.toISOString() : "",
+          custcol20: e.actual_weight ?? "",//dev: custcol20  prod: custcol_actual_weight
+          custcol19: e.dest_zip ?? "",//dev: custcol19 prod: custcol_destination_on_zip
+          custcol18: e.dest_state ?? "",//dev: custcol18 prod: custcol_destination_on_state
+          custcol17: e.dest_country ?? "",//dev: custcol17 prod: custcol_destination_on_country
+          custcol_miles_distance: e.miles ?? "",
+          custcol_chargeable_weight: e.chargeable_weight ?? "",
         };
       }),
     };

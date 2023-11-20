@@ -398,13 +398,13 @@ async function makeJsonPayload(data) {
         : "",
       tranid: singleItem.invoice_nbr ?? "",
       currency: singleItem.currency_internal_id ?? "",
-      otherrefnum: singleItem.customer_po ?? "",
       class: hardcode.class.head,
       department: hardcode.department.head,
       location: hardcode.location.head,
       custbody9: singleItem.file_nbr ?? "",
       custbody17: singleItem.email ?? "",
       custbody_source_system: hardcode.source_system,
+      custbodymfc_tmsinvoice: singleItem.invoice_nbr ?? "",
       custbody_omni_po_hawb: singleItem.housebill_nbr ?? "",
       custbody_mode: singleItem?.mode_name ?? "",
       custbody_service_level: singleItem?.service_level ?? "",
@@ -432,10 +432,17 @@ async function makeJsonPayload(data) {
           },
           custcol4: e.ref_nbr ?? "",
           custcol_riv_consol_nbr: e.consol_nbr ?? "",
-          custcol_finalizedby: e.finalizedby ?? "", //prod:-2614  dev:-2511
+          custcol_finalizedby: e.finalizedby ?? "",
+          custcol20: e.actual_weight ?? "",//dev: custcol20  prod: custcol_actual_weight
+          custcol19: e.dest_zip ?? "",//dev: custcol19 prod: custcol_destination_on_zip
+          custcol18: e.dest_state ?? "",//dev: custcol18 prod: custcol_destination_on_state
+          custcol17: e.dest_country ?? "",//dev: custcol17 prod: custcol_destination_on_country
+          custcol_miles_distance: e.miles ?? "",
+          custcol_chargeable_weight: e.chargeable_weight ?? "",
         };
       }),
     };
+
     if (singleItem.invoice_type == "IN") {
       payload.approvalstatus = "2";
     }
