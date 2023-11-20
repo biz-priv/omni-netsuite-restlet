@@ -15,8 +15,8 @@ let userConfig = "";
 let connections = "";
 
 const arDbNamePrev = process.env.DATABASE_NAME;
-const arDbName = "dw_dev.interface_ar";
-// const arDbName = arDbNamePrev + "interface_ar";
+// const arDbName = "dw_dev.interface_ar";
+const arDbName = arDbNamePrev + "interface_ar";
 const source_system = "LL";
 let totalCountPerLoop = 20;
 const today = getCustomDate();

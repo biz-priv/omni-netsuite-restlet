@@ -15,8 +15,8 @@ let userConfig = "";
 let connections = "";
 
 const apDbNamePrev = process.env.DATABASE_NAME;
-//const apDbName = apDbNamePrev + "interface_ap";
-const apDbName="dw_dev.interface_ap"
+const apDbName = apDbNamePrev + "interface_ap";
+// const apDbName="dw_dev.interface_ap"
 const source_system = "LL";
 
 const today = getCustomDate();
