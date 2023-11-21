@@ -110,7 +110,7 @@ functions:
   #Intercompany fn
   netsuite-cw-intercompany-restlet: ${file(config/functions/netsuite-intercompany.yml):function}
   netsuite-tr-intercompany-restlet: ${file(config/functions/netsuite-tr-intercompany.yml):function}
-
+  netsuite-ll-intercompany-restlet: ${file(config/functions/netsuite-ll-intercompany.yml):function}
 
 
 stepFunctions:
@@ -128,3 +128,5 @@ stepFunctions:
     netsuite-cw-intercompany-restlet: ${file(config/step-functions/netsuite-intercompany-state-machine.yml):stateMachine}
     #TR intercompany 
     netsuite-tr-intercompany-restlet: ${file(config/step-functions/netsuite-intercompany-tr-state-machine.yml):stateMachine}
+    #LL intercompany 
+    netsuite-ll-intercompany-restlet: ${file(config/step-functions/netsuite-intercompany-ll-state-machine.yml):stateMachine}
