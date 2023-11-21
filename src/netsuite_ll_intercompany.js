@@ -61,7 +61,7 @@ module.exports.handler = async (event, context, callback) => {
     } else {
       await triggerReportLambda(
         process.env.NS_RESTLET_INVOICE_REPORT,
-        "LL_INTERCOMPANY"
+        "WTLL_INTERCOMPANY"
       );
       hasMoreData = "false";
     }
@@ -70,7 +70,7 @@ module.exports.handler = async (event, context, callback) => {
     console.error("error:handler", error);
     await triggerReportLambda(
       process.env.NS_RESTLET_INVOICE_REPORT,
-      "LL_INTERCOMPANY"
+      "WTLL_INTERCOMPANY"
     );
     return { hasMoreData: "false" };
   }
@@ -83,23 +83,21 @@ module.exports.handler = async (event, context, callback) => {
 async function getData(connections) {
   try {
     const query = `
-    select distinct ar.source_system , ar.file_nbr , ar.ar_internal_id , ap.ap_internal_id, ap.invoice_type
-    from (select distinct source_system ,file_nbr ,invoice_nbr ,invoice_type ,unique_ref_nbr,internal_id as ar_internal_id ,total
+    select distinct ar.invoice_nbr , ar.ar_internal_id , ap.ap_internal_id, ap.invoice_type
+    from (select distinct invoice_nbr ,invoice_type ,internal_id as ar_internal_id ,total
         from ${arDbName} ia
-          where source_system = '${source_system}' and intercompany = 'Y' and pairing_available_flag = 'Y' and processed = 'P' and (intercompany_processed_date is null or
+          where source_system = 'LL' and intercompany = 'Y' and pairing_available_flag = 'Y' and processed = 'P' and (intercompany_processed_date is null or
             (intercompany_processed = 'F' and intercompany_processed_date < '${today}'))
         )ar
     join
         (
-        select distinct a.source_system ,a.file_nbr ,a.invoice_nbr ,a.invoice_type ,a.unique_ref_nbr ,a.internal_id as ap_internal_id,total
+        select distinct a.invoice_nbr ,a.invoice_type ,a.internal_id as ap_internal_id,total
             from ${apDbName} a
-            where source_system = '${source_system}' and intercompany = 'Y' and pairing_available_flag = 'Y' and processed = 'P' and (intercompany_processed_date is null or
+            where source_system = 'WT' and intercompany = 'Y' and pairing_available_flag = 'Y' and processed = 'P' and (intercompany_processed_date is null or
                         (intercompany_processed = 'F' and intercompany_processed_date < '${today}'))
         )ap
-    on ar.source_system = ap.source_system
-    and ar.file_nbr = ap.file_nbr
-    and ar.invoice_type = ap.invoice_type
-    and ar.unique_ref_nbr = ap.unique_ref_nbr
+    on ar.invoice_type = ap.invoice_type
+    and ar.invoice_nbr = ap.invoice_nbr
     limit ${totalCountPerLoop + 1}`;
     console.info("query",query);
     const [rows] = await connections.execute(query);
@@ -131,7 +129,7 @@ async function updateAPandAr(connections, item, processed = "P") {
                 UPDATE ${apDbName} set 
                 intercompany_processed = '${processed}', 
                 intercompany_processed_date = '${today}'
-                where internal_id = '${item.ap_internal_id}' and source_system = '${source_system}';
+                where internal_id = '${item.ap_internal_id}' and source_system = 'WT';
                 `;
     console.info("query1", query1);
     await connections.query(query1);
@@ -139,7 +137,7 @@ async function updateAPandAr(connections, item, processed = "P") {
                 UPDATE ${arDbName} set 
                 intercompany_processed = '${processed}', 
                 intercompany_processed_date = '${today}'
-                where internal_id = '${item.ar_internal_id}' and source_system = '${source_system}';
+                where internal_id = '${item.ar_internal_id}' and source_system = 'LL';
               `;
     console.info("query2", query2);
     await connections.query(query2);
@@ -163,6 +161,8 @@ async function mainProcess(connections, item) {
     console.error("error:mainProcess", error);
     if (error.hasOwnProperty("customError")) {
       await updateAPandAr(connections, item, "F");
+      item.source_system = "WTLL"
+      item.file_nbr = ""
       await createIntercompanyFailedRecords(connections, item, error);
     } else {
       await sendDevNotification(
