@@ -12,7 +12,7 @@ const mailList = {
     AP: process.env.NETSUIT_AP_ERROR_EMAIL_TO,
   },
   INTERCOMPANY: {
-    CW: process.env.NETSUIT_AP_ERROR_EMAIL_TO,
+    CW: process.env.NETSUIT_INTERCOMPANY_ERROR_EMAIL_TO,
   },
 };
 
