@@ -408,6 +408,7 @@ async function makeJsonPayload(data) {
       custbody_omni_po_hawb: singleItem.housebill_nbr ?? "",
       custbody_mode: singleItem?.mode_name ?? "",
       custbody_service_level: singleItem?.service_level ?? "",
+      custbody1: hardcode.custbody1.head,
       item: data.map((e) => {
         return {
           taxcode: e.tax_code_internal_id ?? "",
@@ -763,6 +764,7 @@ function getHardcodeData(isIntercompany = false) {
       intercompany: { head: "15", line: "1" },
     },
     location: { head: "413", line: "EXT ID: Take from DB" },
+    custbody1: {head: "14"}
   };
   const departmentType = isIntercompany ? "intercompany" : "default";
   return {

@@ -254,6 +254,9 @@ async function makeJsonPayload(data) {
         };
       }),
     };
+    if(singleItem.intercompany == "Y"){
+      payload.custbody1 = hardcode.custbody1.head
+    }
 
     return payload;
   } catch (error) {
@@ -415,6 +418,7 @@ function getHardcodeData() {
     },
     department: { head: "15", line: "1" },
     location: { head: "413", line: "EXT ID: Take from DB" },
+    custbody1: { head: "9" },
   };
   return data;
 }
