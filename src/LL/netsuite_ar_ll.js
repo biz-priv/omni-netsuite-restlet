@@ -254,9 +254,6 @@ async function makeJsonPayload(data) {
         };
       }),
     };
-    if(singleItem.intercompany == "Y"){
-      payload.custbody1 = hardcode.custbody1.head
-    }
 
     return payload;
   } catch (error) {
