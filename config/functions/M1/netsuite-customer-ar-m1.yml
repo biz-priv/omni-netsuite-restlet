@@ -15,3 +15,5 @@ function:
   environment:
     NETSUITE_AR_M1_CUSTOMER_STEP_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:netsuite-customer-ar-m1-restlet-state-machine-${self:provider.stage}
     FUNCTION_NAME: ${self:service}-customer-ar-m1-${self:provider.stage}
+    SNS_TOPIC_ARN: ${ssm:/omni-reports/${self:provider.stage}/error-notification/sns/arn} 
+    REGION: ${self:provider.region}

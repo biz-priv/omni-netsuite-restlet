@@ -14,3 +14,5 @@ function:
       - Helpers/**
   environment:
     NETSUITE_AP_CW_VENDOR_STEP_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:netsuite-vendor-ap-cw-restlet-state-machine-${self:provider.stage}
+    SNS_TOPIC_ARN: ${ssm:/omni-reports/${self:provider.stage}/error-notification/sns/arn}
+    REGION: ${self:provider.region}
