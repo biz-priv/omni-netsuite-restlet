@@ -79,6 +79,11 @@ module.exports.handler = async (event, context, callback) => {
     }
     return { hasMoreData };
   } catch (error) {
+    const params = {
+			Message: `Error in ${functionName}, Error: ${error.Message}`,
+			TopicArn: SNS_TOPIC_ARN,
+		};
+    await sns.publish(params).promise();
     await triggerReportLambda(process.env.NS_RESTLET_INVOICE_REPORT, "CW_AR");
     await startNextStep();
     return { hasMoreData: "false" };
