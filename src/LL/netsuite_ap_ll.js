@@ -350,6 +350,7 @@ async function makeJsonPayload(data) {
     if (singleItem.discount !== null) {
       payload.item.push({
         item: 4631,
+        custcol_hawb: e.housebill_nbr ?? "",
         amount: -singleItem.discount,
         rate: -singleItem.discount,
         department: "2",
@@ -770,6 +771,7 @@ async function mainBillPaymentProcess(item) {
   let jsonPayload = {
     custbody_mfc_omni_unique_key: `${item.vendor_internal_id}-3490-${item.internal_id}`,
     entity: item.vendor_internal_id,
+    tranid: item.system_id,
     account: 3490,
     department: 15,
     class: 9,
