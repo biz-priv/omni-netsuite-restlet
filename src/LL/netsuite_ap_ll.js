@@ -15,7 +15,7 @@ let userConfig = "";
 let connections = "";
 
 const apDbNamePrev = process.env.DATABASE_NAME;
-const apDbName = apDbNamePrev + "interface_ap";
+const apDbName = apDbNamePrev + "interface_ap_epay";
 // const apDbName="dw_dev.interface_ap"
 const source_system = "LL";
 
@@ -28,6 +28,7 @@ let queryOperator = "<=";
 let queryInvoiceId = null;
 let queryInvoiceNbr = null;
 let queryVendorId = null;
+let processType = "";
 
 module.exports.handler = async (event, context, callback) => {
   userConfig = getConfig(source_system, process.env);
@@ -59,129 +60,29 @@ module.exports.handler = async (event, context, callback) => {
     ? event.queryVendorId
     : null;
 
+  processType = event.hasOwnProperty("queryVendorId") ? event.processType : "";
+
   try {
     /**
      * Get connections
      */
     connections = await getConnectionToRds(process.env);
 
-    /**
-     * will work on this if section if rest can't handle more than 500 line items.
-     */
-    if (queryOperator == ">") {
-      // Update 500 line items per process
-      console.log("> start");
-
-      totalCountPerLoop = 0;
-      if (queryInvoiceId != null && queryInvoiceId.toString().length > 0) {
-        console.log(">if");
-
-        try {
-          const invoiceDataList = await getInvoiceNbrData(
-            connections,
-            queryInvoiceNbr,
-            true
-          );
-
-          try {
-            await createInvoiceAndUpdateLineItems(
-              queryInvoiceId,
-              invoiceDataList
-            );
-          } catch (error) {
-            console.log("work later");
-          }
-
-          if (lineItemPerProcess >= invoiceDataList.length) {
-            throw "Next Process";
-          } else {
-            return {
-              hasMoreData: "true",
-              queryOperator,
-              queryOffset: queryOffset + lineItemPerProcess + 1,
-              queryInvoiceId,
-              queryInvoiceNbr,
-              queryinvoiceType,
-              queryVendorId,
-            };
-          }
-        } catch (error) {
-          return {
-            hasMoreData: "true",
-            queryOperator,
-          };
-        }
-      } else {
-        console.log("> else");
-
-        try {
-          let invoiceDataList = [];
-          let orderData = [];
-          try {
-            orderData = await getDataGroupBy(connections);
-            console.log("orderData", orderData.length);
-          } catch (error) {
-            await triggerReportLambda(
-              process.env.NS_RESTLET_INVOICE_REPORT,
-              "LL_AP"
-            );
-            return { hasMoreData: "false" };
-          }
-          queryInvoiceNbr = orderData[0].invoice_nbr;
-          queryVendorId = orderData[0].vendor_id;
-          queryinvoiceType = orderData[0].invoice_type;
-
-          invoiceDataList = await getInvoiceNbrData(
-            connections,
-            queryInvoiceNbr,
-            true
-          );
-          console.log("invoiceDataList", invoiceDataList.length);
-          /**
-           * set queryInvoiceId in this process and return update query
-           */
-          const queryData = await mainProcess(orderData[0], invoiceDataList);
-          await updateInvoiceId(connections, [queryData]);
-
-          /**
-           * if items <= 501 process next invoice
-           * or send data for next update process of same invoice.
-           */
-          if (
-            invoiceDataList.length <= lineItemPerProcess ||
-            queryInvoiceId == null
-          ) {
-            console.log("next invoice");
-            throw "Next Invoice";
-          } else {
-            console.log("next exec", {
-              hasMoreData: "true",
-              queryOperator,
-              queryOffset: queryOffset + lineItemPerProcess + 1,
-              queryInvoiceId,
-              queryInvoiceNbr: queryInvoiceNbr,
-              queryinvoiceType: orderData[0].invoice_type,
-              queryVendorId,
-            });
-
-            return {
-              hasMoreData: "true",
-              queryOperator,
-              queryOffset: queryOffset + lineItemPerProcess + 1,
-              queryInvoiceId,
-              queryInvoiceNbr: queryInvoiceNbr,
-              queryinvoiceType: orderData[0].invoice_type,
-              queryVendorId,
-            };
-          }
-        } catch (error) {
-          console.log("error", error);
-          return {
-            hasMoreData: "true",
-            queryOperator,
-          };
-        }
+    if (processType == "cancelation") {
+      processType = await cancellationProcess();
+      return {
+        hasMoreData: "true",
+        processType,
+      };
+    } else if (processType == "billPayment") {
+      hasMoreData = await billPaymentProcess();
+      if(hasMoreData == "false"){
+        await triggerReportLambda(process.env.NETSUIT_INVOICE_REPORT, "LL_AP");
       }
+      return {
+        hasMoreData,
+        processType,
+      };
     } else {
       //Create the main invoice with 500 line items 1st
       /**
@@ -193,9 +94,10 @@ module.exports.handler = async (event, context, callback) => {
       try {
         orderData = await getDataGroupBy(connections);
       } catch (error) {
+        console.error("Error while fetching unique invoices: ", error)
         return {
           hasMoreData: "true",
-          queryOperator: queryOperator == "<=" ? ">" : "<=",
+          processType: "cancelation"
         };
       }
 
@@ -217,7 +119,7 @@ module.exports.handler = async (event, context, callback) => {
         );
         return {
           hasMoreData: "true",
-          queryOperator,
+          processType: "cancelation"
         };
       }
       /**
@@ -244,10 +146,10 @@ module.exports.handler = async (event, context, callback) => {
       await updateInvoiceId(connections, queryData);
 
       if (currentCount < totalCountPerLoop) {
-        queryOperator = ">";
+        processType = "cancelation";
       }
-      return { hasMoreData: "true", queryOperator };
     }
+    return { hasMoreData: "true", processType };
   } catch (error) {
     console.log("error", error);
     await triggerReportLambda(process.env.NETSUIT_INVOICE_REPORT, "LL_AP");
@@ -270,7 +172,7 @@ async function mainProcess(item, invoiceDataList) {
       return (
         e.invoice_nbr == item.invoice_nbr &&
         e.vendor_id == item.vendor_id &&
-        e.invoice_type == item.invoice_type 
+        e.invoice_type == item.invoice_type
       );
     });
     console.log("dataList", dataList.length);
@@ -284,12 +186,12 @@ async function mainProcess(item, invoiceDataList) {
      * Make Json payload
      */
     const jsonPayload = await makeJsonPayload(dataList);
-    console.log("JSONPayload",JSON.stringify(jsonPayload))
+    console.log("JSONPayload", JSON.stringify(jsonPayload));
     /**
      * create invoice
      */
     const invoiceId = await createInvoice(jsonPayload, singleItem);
-    console.log("invoiceId",invoiceId);
+    console.log("invoiceId", invoiceId);
 
     if (queryOperator == ">") {
       queryInvoiceId = invoiceId.toString();
@@ -301,7 +203,7 @@ async function mainProcess(item, invoiceDataList) {
     const getQuery = getUpdateQuery(singleItem, invoiceId);
     return getQuery;
   } catch (error) {
-    console.log("mainprocess:error",error);
+    console.log("mainprocess:error", error);
     if (error.hasOwnProperty("customError")) {
       let getQuery = "";
       try {
@@ -333,15 +235,14 @@ async function mainProcess(item, invoiceDataList) {
  */
 async function getDataGroupBy(connections) {
   try {
-
-    const query =  `SELECT invoice_nbr, vendor_id, invoice_type, count(*) as tc FROM ${apDbName} 
+    const query = `SELECT invoice_nbr, vendor_id, invoice_type, count(*) as tc FROM ${apDbName} 
     WHERE  ((internal_id is null and processed is null and vendor_internal_id is not null) or
     (vendor_internal_id is not null and processed ='F' and processed_date < '${today}'))
-    and source_system = '${source_system}' and invoice_nbr != ''
+    and source_system = '${source_system}' and invoice_nbr != '' and status='APPROVED' 
     GROUP BY invoice_nbr, vendor_id, invoice_type
     having tc ${queryOperator} ${lineItemPerProcess} 
     limit ${totalCountPerLoop + 1}`;
-    console.log("query", query,totalCountPerLoop);
+    console.log("query", query, totalCountPerLoop);
 
     const [rows] = await connections.execute(query);
     const result = rows;
@@ -419,7 +320,7 @@ async function makeJsonPayload(data) {
           department: hardcode.department.line ?? "",
           class:
             hardcode.class.line[
-            e.business_segment.split(":")[1].trim().toLowerCase()
+              e.business_segment.split(":")[1].trim().toLowerCase()
             ],
           location: {
             refName: e.handling_stn ?? "",
@@ -445,6 +346,18 @@ async function makeJsonPayload(data) {
 
     if (singleItem.invoice_type == "IN") {
       payload.approvalstatus = "2";
+    }
+    if (singleItem.discount !== null) {
+      payload.item.push({
+        item: 4631,
+        amount: -singleItem.discount,
+        rate: -singleItem.discount,
+        department: "2",
+        class: "51",
+        location: {
+          refName: "TL01",
+        },
+      });
     }
 
     return payload;
@@ -494,22 +407,24 @@ function getAuthorizationHeader(options) {
   );
 }
 
-
-async function createInvoice(payload, singleItem) {
+async function createInvoice(payload, singleItem, cancelFlag = false) {
   try {
     const endpoiont =
-        singleItem.invoice_type == "IN"
-          ? process.env.NETSUIT_RESTLET_VB_URL
-          : process.env.NETSUIT_RESTLET_VC_URL;
-          const options = {
-            consumer_key: userConfig.token.consumer_key,
-            consumer_secret_key: userConfig.token.consumer_secret,
-            token: userConfig.token.token_key,
-            token_secret: userConfig.token.token_secret,
-            realm: userConfig.account,
-            url: endpoiont,
-            method: 'POST',
-          };
+      singleItem.invoice_type == "IN"
+        ? process.env.NETSUIT_RESTLET_VB_URL
+        : process.env.NETSUIT_RESTLET_VC_URL;
+    const options = {
+      consumer_key: userConfig.token.consumer_key,
+      consumer_secret_key: userConfig.token.consumer_secret,
+      token: userConfig.token.token_key,
+      token_secret: userConfig.token.token_secret,
+      realm: userConfig.account,
+      url: endpoiont,
+      method: "POST",
+    };
+    if (cancelFlag) {
+      options.method = "PUT";
+    }
     // const options = {
     //   consumer_key: 'ece3501945c67f84d09c1ce50e6fffe806d4dc553ea9894b586dc6abdb230809',
     //   consumer_secret_key: '56bafee4f285a742d208c122cea5e0da328fd7e2810091c048ac350c1ae875c7',
@@ -520,27 +435,27 @@ async function createInvoice(payload, singleItem) {
     //   method: 'POST',
     // };
 
-    const authHeader =  getAuthorizationHeader(options);
+    const authHeader = getAuthorizationHeader(options);
 
     const configApi = {
       method: options.method,
       maxBodyLength: Infinity,
       url: options.url,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         ...authHeader,
       },
       data: JSON.stringify(payload),
     };
 
     const response = await axios.request(configApi);
-    console.log("response",response);
-    if (response.status === 200 && response.data.status === 'Success') {
+    console.log("response", response);
+    if (response.status === 200 && response.data.status === "Success") {
       return response.data.id;
     } else {
       throw {
         customError: true,
-        msg: response.data.reason.replace(/'/g, '`'),
+        msg: response.data.reason.replace(/'/g, "`"),
         payload: JSON.stringify(payload),
         response: response.data,
       };
@@ -549,149 +464,19 @@ async function createInvoice(payload, singleItem) {
     if (error?.response?.reason) {
       throw {
         customError: true,
-        msg: error.msg.replace(/'/g, '`'),
+        msg: error.msg.replace(/'/g, "`"),
         payload: error.payload,
-        response: JSON.stringify(error.response).replace(/'/g, '`'),
+        response: JSON.stringify(error.response).replace(/'/g, "`"),
       };
     } else {
       throw {
         customError: true,
-        msg: 'Netsuit AP API Failed',
-        response: '',
+        msg: "Netsuit AP API Failed",
+        response: "",
       };
     }
   }
 }
-
-
-async function makeLineItemsJsonPayload(invoiceId, data) {
-  try {
-    const hardcode = getHardcodeData();
-
-    /**
-     * head level details
-     */
-    const payload = {
-      id: invoiceId,
-      item: data.map((e) => {
-        return {
-          // custcol_mfc_line_unique_key:"",
-          taxcode: e.tax_code_internal_id ?? "",
-          item: e.charge_cd_internal_id ?? "",
-          description: e.charge_cd_desc ?? "",
-          amount: +parseFloat(e.total).toFixed(2) ?? "",
-          rate: +parseFloat(e.rate).toFixed(2) ?? "",
-          department: hardcode.department.line ?? "",
-          class:
-            hardcode.class.line[
-            e.business_segment.split(":")[1].trim().toLowerCase()
-            ],
-          location: {
-            refName: e.handling_stn ?? "",
-          },
-          custcol_hawb: e.housebill_nbr ?? "",
-          custcol3: e.sales_person ?? "",
-          custcol5: e.master_bill_nbr ?? "",
-          custcol2: {
-            refName: e.controlling_stn ?? "",
-          },
-          custcol4: e.ref_nbr ?? "",
-          custcol_riv_consol_nbr: e.consol_nbr ?? "",
-          custcol_finalizedby: e.finalizedby ?? "",
-        };
-      }),
-    };
-    return payload;
-  } catch (error) {
-    console.log("error payload", error);
-    await sendDevNotification(
-      source_system,
-      "AP",
-      "netsuite_ap_ll payload error",
-      data[0],
-      error
-    );
-    throw {
-      customError: true,
-      msg: "Unable to make payload",
-      data: data[0],
-    };
-  }
-}
-
-
-
-async function createInvoiceAndUpdateLineItems(invoiceId, data) {
-  try {
-    const endpoint =
-      data[0].invoice_type == 'IN'
-        ? process.env.NETSUIT_RESTLET_VB_URL
-        : process.env.NETSUIT_RESTLET_VC_URL;
-
-    const options = {
-      consumer_key: userConfig.token.consumer_key,
-      consumer_secret_key: userConfig.token.consumer_secret,
-      token: userConfig.token.token_key,
-      token_secret: userConfig.token.token_secret,
-      realm: userConfig.account,
-      url: endpoint,
-      method: 'PUT',
-    };
-
-    const authHeader = await getAuthorizationHeader(options);
-
-    const payload = makeLineItemsJsonPayload(invoiceId, data);
-    console.log('payload', JSON.stringify(payload));
-
-    const configApi = {
-      method: options.method,
-      maxBodyLength: Infinity,
-      url: options.url,
-      headers: {
-        'Content-Type': 'application/json',
-        ...authHeader,
-      },
-      data: JSON.stringify(payload),
-    };
-    console.log('configApi', configApi);
-
-    const response = await axios.request(configApi);
-
-    console.log('response', response.status);
-    console.log(JSON.stringify(response.data));
-
-    if (response.status === 200 && response.data.status === 'Success') {
-      return response.data.id;
-    } else {
-      throw {
-        customError: true,
-        msg: response.data.reason.replace(/'/g, '`'),
-        payload: JSON.stringify(payload),
-        response: JSON.stringify(response.data).replace(/'/g, '`'),
-      };
-    }
-  } catch (error) {
-    console.log('error:createInvoice:main:catch', error);
-   if (error.response) {
-      throw {
-        customError: true,
-        msg: error.msg.replace(/'/g, '`'),
-        payload: error.payload,
-        response: error.response.replace(/'/g, '`'),
-      };
-    } else {
-      throw {
-        customError: true,
-        msg: 'Netsuit AP API Failed',
-        response: '',
-      };
-    }
-  }
-}
-
-
-
-
 
 /**
  * prepear the query for update interface_ap_master
@@ -727,7 +512,7 @@ function getUpdateQuery(item, invoiceId, isSuccess = true) {
  * @param {*} query
  * @returns
  */
-async function updateInvoiceId(connections, query) {
+async function updateInvoiceId(connections, query, errSub = "Invoice is created But failed to update internal_id ") {
   for (let index = 0; index < query.length; index++) {
     const element = query[index];
     console.log("element", element);
@@ -739,7 +524,7 @@ async function updateInvoiceId(connections, query) {
         source_system,
         "AP",
         "netsuite_ap_ll updateInvoiceId",
-        "Invoice is created But failed to update internal_id " + element,
+        errSub + element,
         error
       );
     }
@@ -764,7 +549,7 @@ function getHardcodeData(isIntercompany = false) {
       intercompany: { head: "15", line: "1" },
     },
     location: { head: "413", line: "EXT ID: Take from DB" },
-    custbody1: {head: "14"}
+    custbody1: { head: "14" },
   };
   const departmentType = isIntercompany ? "intercompany" : "default";
   return {
@@ -795,5 +580,297 @@ function getCustomDate() {
   let mo = new Intl.DateTimeFormat("en", { month: "2-digit" }).format(date);
   let da = new Intl.DateTimeFormat("en", { day: "2-digit" }).format(date);
   return `${ye}-${mo}-${da}`;
+}
+
+//cancelation process
+async function cancellationProcess() {
+  try {
+    let cancelledData = [];
+    try {
+      const query = `select ae.invoice_nbr,ae.internal_id from ${apDbName} ae join ${apDbNamePrev}interface_ap_epay_status aes
+      on ae.invoice_nbr=aes.invoice_nbr
+      where ae.internal_id is not null and ae.processed ='P' and aes.processed is null and aes.status ='CANCELLED' limit ${totalCountPerLoop + 1}`;
+      cancelledData = await fetchCancelAndBillPaymentData(query);
+      currentCount = cancelledData.length
+    } catch (error) {
+      if(error == "No data found."){
+        return "billPayment";
+      }else{
+        throw error
+      }
+    }
+
+    const perLoop = 15;
+    let queryData = []
+    for (let index = 0; index < (cancelledData.length + 1) / perLoop; index++) {
+      let newArray = cancelledData.slice(
+        index * perLoop,
+        index * perLoop + perLoop
+      );
+      const data = await Promise.all(
+        newArray.map(async (item) => {
+          return await mainCancelProcess(item);
+        })
+      );
+      queryData = [...queryData, ...data];
+    }
+
+    /**
+     * Updating total 21 invoices at once
+     */
+    await updateInvoiceId(connections, queryData, "Cancelation is successfully posted But failed to update internal_id ");
+
+    if (currentCount < totalCountPerLoop) {
+      return "billPayment";
+    }
+
+    return "cancelation"
+
+  } catch (error) {
+    console.error("cancellation Process: ", error);
+    await sendDevNotification(
+      source_system,
+      "AP",
+      "netsuite_ap_ll cancelation",
+      "Erred out in cancelation process ",
+      error
+    );
+    return "billPayment";
+  }
+}
+
+async function fetchCancelAndBillPaymentData(query) {
+  try {
+    console.log("query", query, totalCountPerLoop);
+
+    const [rows] = await connections.execute(query);
+    const result = rows;
+    if (!result || result.length == 0) {
+      throw "No data found.";
+    }
+    return result;
+  } catch (error) {
+    console.error("Error while fetching data: ", error)
+    throw error;
+  }
+}
+
+async function getCancelAndBillPaymentUpdateQuery(item, id, isSuccess = true) {
+  try {
+    console.log("item ", item);
+    let query = `UPDATE ${apDbNamePrev}interface_ap_epay_status `;
+    if (isSuccess) {
+      query += ` SET processed = 'P', internal_id = '${id}',`;
+    } else {
+      query += ` SET processed = 'F',`;
+    }
+    query += ` processed_date = '${today}' 
+                WHERE invoice_nbr = '${item.invoice_nbr}'`;
+
+    return query;
+  } catch (error) {
+    return "";
+  }
+}
+
+async function mainCancelProcess(item) {
+  let jsonPayload = {
+    id: `${item.internal_id}`,
+    approvalstatus: "3",
+  };
+  try {
+    const id = await createInvoice(jsonPayload, {invoice_type:"IN"}, true);
+    console.info(`id = ${id} received after posting cancelation data to NS for internalid = ${item.internal_id}`)
+    return await getCancelAndBillPaymentUpdateQuery(item, id);
+  } catch (error) {
+    console.error(
+      "Error while posting the data to netsuite and preparing update query: ",
+      error
+    );
+    if (error.hasOwnProperty("customError")) {
+      try {
+        return await getCancelAndBillPaymentUpdateQuery(item, "", false);
+      } catch (error) {
+        console.error("Error in mainCancelProcess: ", error);
+      }
+    }else{
+      await sendDevNotification(
+        source_system,
+        "AP",
+        "netsuite_ap_ll cancelation",
+        "Erred out in cancelation process ",
+        error
+      );
+      return await getCancelAndBillPaymentUpdateQuery(item, "", false);
+    }
+  }
+}
+
+//cancelation process
+async function billPaymentProcess() {
+  try {
+    let billPaymentData = [];
+    try {
+      const query = `select ae.vendor_internal_id, ae.invoice_nbr,ae.internal_id,ae.rate from ${apDbName} ae join ${apDbNamePrev}interface_ap_epay_status aes
+      on ae.invoice_nbr=aes.invoice_nbr
+      where ae.internal_id is not null and ae.processed ='P' and aes.processed is null and aes.status ='COMPLETED' LIMIT ${totalCountPerLoop + 1}`;
+      billPaymentData = await fetchCancelAndBillPaymentData(query);
+      currentCount = billPaymentData.length
+    } catch (error) {
+      if(error == "No data found."){
+      return "false";
+      }else{
+        throw error
+      }
+    }
+
+    const perLoop = 15;
+    let queryData = []
+    for (
+      let index = 0;
+      index < (billPaymentData.length + 1) / perLoop;
+      index++
+    ) {
+      let newArray = billPaymentData.slice(
+        index * perLoop,
+        index * perLoop + perLoop
+      );
+      const data = await Promise.all(
+        newArray.map(async (item) => {
+          return await mainBillPaymentProcess(item);
+        })
+      );
+      queryData = [...queryData, ...data];
+    }
+
+    /**
+     * Updating total 21 invoices at once
+     */
+    await updateInvoiceId(connections, queryData, "bill payment is successfully posted But failed to update internal_id ");
+
+    if (currentCount < totalCountPerLoop) {
+      return "false";
+    }
+
+    return "true"
+  } catch (error) {
+    console.error("cancellation Process: ", error);
+    await sendDevNotification(
+      source_system,
+      "AP",
+      "netsuite_ap_ll billPayment",
+      "Erred out in bill payment process ",
+      error
+    );
+    return "false"
+  }
+}
+
+async function mainBillPaymentProcess(item) {
+  let jsonPayload = {
+    custbody_mfc_omni_unique_key: `${item.vendor_internal_id}-3490-${item.internal_id}`,
+    entity: item.vendor_internal_id,
+    account: 3490,
+    department: 15,
+    class: 9,
+    location: 413,
+    apply: [
+      {
+        internalid: item.internal_id,
+        apply: true,
+        amount: item.rate,
+      },
+    ],
+  };
+  try {
+    const id = await sendBillpaymentData(jsonPayload);
+    return await getCancelAndBillPaymentUpdateQuery(item, id);
+  } catch (error) {
+    console.error(
+      "Error while posting the data to netsuite and preparing update query: ",
+      error
+    );
+    if (error.hasOwnProperty("customError")) {
+      try {
+        await sendDevNotification(
+          source_system,
+          "AP",
+          "netsuite_ap_ll billPayment",
+          "Erred out in bill payment process ",
+          error
+        );
+        return await getCancelAndBillPaymentUpdateQuery(item, "", false);
+      } catch (error) {
+        console.error("Error in mainCancelProcess: ", error);
+      }
+    }else{
+      await getCancelAndBillPaymentUpdateQuery(item, "", false);
+    }
+  }
+}
+
+async function sendBillpaymentData(payload) {
+  try {
+    const endpoiont = "https://1238234-sb1.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=721&deploy=3"
+    const options = {
+      consumer_key: userConfig.token.consumer_key,
+      consumer_secret_key: userConfig.token.consumer_secret,
+      token: userConfig.token.token_key,
+      token_secret: userConfig.token.token_secret,
+      realm: userConfig.account,
+      url: endpoiont,
+      method: "POST",
+    };
+    // const options = {
+    //   consumer_key: 'ece3501945c67f84d09c1ce50e6fffe806d4dc553ea9894b586dc6abdb230809',
+    //   consumer_secret_key: '56bafee4f285a742d208c122cea5e0da328fd7e2810091c048ac350c1ae875c7',
+    //   token: '962bbe698cdaebb4e066daf2a71de998ab7971102a5b4f1a4e86998a9e885d42',
+    //   token_secret: '32d1cf73c4044bdc9ffce26d65f4a6d4e087e2041442cbe9d175547d184a2253',
+    //   realm: '1238234_SB1',
+    //   url: endpoiont,
+    //   method: 'POST',
+    // };
+
+    const authHeader = getAuthorizationHeader(options);
+
+    const configApi = {
+      method: options.method,
+      maxBodyLength: Infinity,
+      url: options.url,
+      headers: {
+        "Content-Type": "application/json",
+        ...authHeader,
+      },
+      data: JSON.stringify(payload),
+    };
+
+    const response = await axios.request(configApi);
+    console.log("response", response);
+    if (response.status === 200 && response.data.status === "Success") {
+      return response.data.id;
+    } else {
+      throw {
+        customError: true,
+        msg: response.data.reason.replace(/'/g, "`"),
+        payload: JSON.stringify(payload),
+        response: response.data,
+      };
+    }
+  } catch (error) {
+    if (error?.response?.reason) {
+      throw {
+        customError: true,
+        msg: error.msg.replace(/'/g, "`"),
+        payload: error.payload,
+        response: JSON.stringify(error.response).replace(/'/g, "`"),
+      };
+    } else {
+      throw {
+        customError: true,
+        msg: "Netsuit AP API Failed",
+        response: "",
+      };
+    }
+  }
 }
 
