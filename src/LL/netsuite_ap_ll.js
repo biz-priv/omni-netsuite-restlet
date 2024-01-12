@@ -76,7 +76,7 @@ module.exports.handler = async (event, context, callback) => {
       };
     } else if (processType == "billPayment") {
       hasMoreData = await billPaymentProcess();
-      if(hasMoreData == "false"){
+      if (hasMoreData == "false") {
         await triggerReportLambda(process.env.NETSUIT_INVOICE_REPORT, "LL_AP");
       }
       return {
@@ -320,7 +320,7 @@ async function makeJsonPayload(data) {
           department: hardcode.department.line ?? "",
           class:
             hardcode.class.line[
-              e.business_segment.split(":")[1].trim().toLowerCase()
+            e.business_segment.split(":")[1].trim().toLowerCase()
             ],
           location: {
             refName: e.handling_stn ?? "",
@@ -350,7 +350,7 @@ async function makeJsonPayload(data) {
     if (singleItem.discount !== null) {
       payload.item.push({
         item: 4631,
-        custcol_hawb: e.housebill_nbr ?? "",
+        custcol_hawb: singleItem.housebill_nbr ?? "",
         amount: -singleItem.discount,
         rate: -singleItem.discount,
         department: "2",
@@ -594,9 +594,9 @@ async function cancellationProcess() {
       cancelledData = await fetchCancelAndBillPaymentData(query);
       currentCount = cancelledData.length
     } catch (error) {
-      if(error == "No data found."){
+      if (error == "No data found.") {
         return "billPayment";
-      }else{
+      } else {
         throw error
       }
     }
@@ -680,7 +680,7 @@ async function mainCancelProcess(item) {
     approvalstatus: "3",
   };
   try {
-    const id = await createInvoice(jsonPayload, {invoice_type:"IN"}, true);
+    const id = await createInvoice(jsonPayload, { invoice_type: "IN" }, true);
     console.info(`id = ${id} received after posting cancelation data to NS for internalid = ${item.internal_id}`)
     return await getCancelAndBillPaymentUpdateQuery(item, id);
   } catch (error) {
@@ -694,7 +694,7 @@ async function mainCancelProcess(item) {
       } catch (error) {
         console.error("Error in mainCancelProcess: ", error);
       }
-    }else{
+    } else {
       await sendDevNotification(
         source_system,
         "AP",
@@ -712,15 +712,15 @@ async function billPaymentProcess() {
   try {
     let billPaymentData = [];
     try {
-      const query = `select ae.vendor_internal_id, ae.invoice_nbr,ae.internal_id,ae.rate from ${apDbName} ae join ${apDbNamePrev}interface_ap_epay_status aes
+      const query = `select ae.vendor_internal_id, ae.invoice_nbr,ae.internal_id,sum(ae.rate)-ae.discount, ae.system_id from ${apDbName} ae join ${apDbNamePrev}interface_ap_epay_status aes
       on ae.invoice_nbr=aes.invoice_nbr
-      where ae.internal_id is not null and ae.processed ='P' and aes.processed is null and aes.status ='COMPLETED' LIMIT ${totalCountPerLoop + 1}`;
+      where ae.internal_id is not null and ae.processed ='P' and aes.processed is null and aes.status ='COMPLETED' group by ae.vendor_internal_id, ae.invoice_nbr,ae.internal_id, ae.system_id LIMIT ${totalCountPerLoop + 1}`;
       billPaymentData = await fetchCancelAndBillPaymentData(query);
       currentCount = billPaymentData.length
     } catch (error) {
-      if(error == "No data found."){
-      return "false";
-      }else{
+      if (error == "No data found.") {
+        return "false";
+      } else {
         throw error
       }
     }
@@ -771,11 +771,11 @@ async function mainBillPaymentProcess(item) {
   let jsonPayload = {
     custbody_mfc_omni_unique_key: `${item.vendor_internal_id}-3490-${item.internal_id}`,
     entity: item.vendor_internal_id,
-    tranid: item.system_id,
     account: 3490,
     department: 15,
     class: 9,
     location: 413,
+    tranid: item.system_id,
     apply: [
       {
         internalid: item.internal_id,
@@ -805,7 +805,7 @@ async function mainBillPaymentProcess(item) {
       } catch (error) {
         console.error("Error in mainCancelProcess: ", error);
       }
-    }else{
+    } else {
       await getCancelAndBillPaymentUpdateQuery(item, "", false);
     }
   }
