@@ -150,7 +150,7 @@ async function getVendor(entityId) {
       token: userConfig.token.token_key,
       token_secret: userConfig.token.token_secret,
       realm: userConfig.account,
-      url: `${process.env.NS_BASE_URL_SB1}&deploy=2&custscript_mfc_entity_eid=${entityId}`,
+      url: `${process.env.NS_BASE_URL}&deploy=2&custscript_mfc_entity_eid=${entityId}`,
       method: "GET",
     };
     // const options = {
