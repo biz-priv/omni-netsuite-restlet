@@ -51,6 +51,10 @@ provider:
     NETSUIT_MCL_CONSUMER_SECRET: ${ssm:/omni-dw/${self:provider.stage}/netsuitMCL/authConfig/consumerSecret~true}
     NETSUIT_MCL_TOKEN_KEY: ${ssm:/omni-dw/${self:provider.stage}/netsuitMCL/authConfig/tokenKeyMCL~true}
     NETSUIT_MCL_TOKEN_SECRET: ${ssm:/omni-dw/${self:provider.stage}/netsuitMCL/authConfig/tokenSecretMCL~true}
+    NETSUIT_LL_CONSUMER_KEY: ${ssm:/omni-dw/${self:provider.stage}/netsuitLL/authConfig/consumerKeyLL}
+    NETSUIT_LL_CONSUMER_SECRET: ${ssm:/omni-dw/${self:provider.stage}/netsuitLL/authConfig/consumerSecretLL}
+    NETSUIT_LL_TOKEN_KEY: ${ssm:/omni-dw/${self:provider.stage}/netsuitLL/authConfig/tokenKeyLL}
+    NETSUIT_LL_TOKEN_SECRET: ${ssm:/omni-dw/${self:provider.stage}/netsuitLL/authConfig/tokenSecretLL}
 
     NETSUIT_AR_WDSLPATH: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/authConfig/wdslPath} 
     NETSUIT_AR_ERROR_TABLE: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/dynamo/errorTable}
@@ -61,6 +65,7 @@ provider:
     NETSUIT_AR_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/to}
     NS_RESTLET_INVOICE_REPORT: ${self:service}-invoice-report-${self:provider.stage}
     NS_BASE_URL: ${ssm:/${self:service}/${self:provider.stage}/netsuiteBaseUrl}
+    NS_BASE_URL_SB1: ${ssm:/${self:service}/${self:provider.stage}/netsuiteBaseUrlSb1}
 
 plugins:
   - serverless-offline
@@ -100,11 +105,17 @@ functions:
   netsuite-customer-ar-m1-restlet: ${file(config/functions/M1/netsuite-customer-ar-m1.yml):function}
   netsuite-ap-m1-restlet: ${file(config/functions/M1/netsuite-ap-m1.yml):function}
   netsuite-vendor-ap-m1-restlet: ${file(config/functions/M1/netsuite-vendor-ap-m1.yml):function} 
+  #LL lambda functions
+  netsuite-ar-ll-restlet: ${file(config/functions/LL/netsuite-ar-ll.yml):function}
+  netsuite-customer-ar-ll-restlet: ${file(config/functions/LL/netsuite-customer-ar-ll.yml):function}
+  netsuite-ap-ll-restlet: ${file(config/functions/LL/netsuite-ap-ll.yml):function}
+  netsuite-vendor-ap-ll-restlet: ${file(config/functions/LL/netsuite-vendor-ap-ll.yml):function}
   #report fn
   invoice-report: ${file(config/functions/invoice-report.yml):function}
   #Intercompany fn
   netsuite-cw-intercompany-restlet: ${file(config/functions/netsuite-intercompany.yml):function}
   netsuite-tr-intercompany-restlet: ${file(config/functions/netsuite-tr-intercompany.yml):function}
+  netsuite-ll-intercompany-restlet: ${file(config/functions/netsuite-ll-intercompany.yml):function}
 
 
 stepFunctions:
@@ -117,8 +128,13 @@ stepFunctions:
     netsuite-vendor-ap-tr-restlet: ${file(config/step-functions/TR/netsuite-vendor-ap-tr-state-machine.yml):stateMachine}
     #M1 Step Functions
     netsuite-customer-ar-m1-restlet: ${file(config/step-functions/M1/netsuite-customer-ar-m1-state-machine.yml):stateMachine}
-    netsuite-vendor-ap-m1-restlet: ${file(config/step-functions/M1/netsuite-vendor-ap-m1-state-machine.yml):stateMachine}   
-    #cw intercompany 
+    netsuite-vendor-ap-m1-restlet: ${file(config/step-functions/M1/netsuite-vendor-ap-m1-state-machine.yml):stateMachine} 
+    #LL Step Functions
+    netsuite-customer-ar-ll-restlet: ${file(config/step-functions/LL/netsuite-customer-ar-ll-state-machine.yml):stateMachine}
+    netsuite-vendor-ap-ll-restlet: ${file(config/step-functions/LL/netsuite-vendor-ap-ll-state-machine.yml):stateMachine}
+    #cw intercompny 
     netsuite-cw-intercompany-restlet: ${file(config/step-functions/netsuite-intercompany-state-machine.yml):stateMachine}
     #TR intercompany 
     netsuite-tr-intercompany-restlet: ${file(config/step-functions/netsuite-intercompany-tr-state-machine.yml):stateMachine}
+    #LL intercompany 
+    netsuite-ll-intercompany-restlet: ${file(config/step-functions/netsuite-intercompany-ll-state-machine.yml):stateMachine}

@@ -1,0 +1,18 @@
+---
+function:
+  handler: src/LL/netsuite_ar_ll.handler
+  layers:
+    - { Ref: CommonNetsuiteLibsLambdaLayer }
+  name: ${self:service}-ar-ll-${self:provider.stage}
+  description: LL Restlet Netsuite AR api service - ${self:provider.stage}
+  runtime: nodejs18.x
+  memorySize: 2048
+  timeout: 900
+  package:
+    include:
+      - src/LL/netsuite_ar_ll.js
+      - Helpers/**
+  environment:
+    NETSUITE_VENDOR_STEP_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:netsuite-vendor-ap-ll-restlet-state-machine-${self:provider.stage}
+    NETSUIT_RESTLET_INV_URL: ${ssm:/omni-dw/${self:provider.stage}/invoice/apiEndpointSb1}
+    NETSUIT_RESTLET_CM_URL: ${ssm:/omni-dw/${self:provider.stage}/creditmemo/apiEndpointSb1}

@@ -1,0 +1,18 @@
+---
+function:
+  handler: src/LL/netsuite_ap_ll.handler
+  layers:
+    - { Ref: CommonNetsuiteLibsLambdaLayer }
+  name: ${self:service}-ap-ll-${self:provider.stage}
+  description: LL Restlet Netsuite AP api service - ${self:provider.stage}
+  runtime: nodejs18.x
+  memorySize: 2048
+  timeout: 900
+  package:
+    include:
+      - src/LL/netsuite_ap_ll.js
+      - Helpers/**
+  environment:
+    NETSUIT_RESTLET_VB_URL: ${ssm:/omni-dw/${self:provider.stage}/vendorbill/apiEndpointSb1}
+    NETSUIT_RESTLET_VC_URL: ${ssm:/omni-dw/${self:provider.stage}/vendorcredit/apiEndpointSb1}
+    FUNCTION_NAME: ${self:service}-ap-ll-${self:provider.stage}
