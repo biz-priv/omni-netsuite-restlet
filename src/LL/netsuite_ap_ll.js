@@ -172,7 +172,8 @@ async function mainProcess(item, invoiceDataList) {
       return (
         e.invoice_nbr == item.invoice_nbr &&
         e.vendor_id == item.vendor_id &&
-        e.invoice_type == item.invoice_type
+        e.invoice_type == item.invoice_type &&
+        e.system_id == item.system_id
       );
     });
     console.log("dataList", dataList.length);
@@ -235,11 +236,11 @@ async function mainProcess(item, invoiceDataList) {
  */
 async function getDataGroupBy(connections) {
   try {
-    const query = `SELECT invoice_nbr, vendor_id, invoice_type, count(*) as tc FROM ${apDbName} 
+    const query = `SELECT invoice_nbr, vendor_id, invoice_type, system_id, count(*) as tc FROM ${apDbName} 
     WHERE  ((internal_id is null and processed is null and vendor_internal_id is not null) or
     (vendor_internal_id is not null and processed ='F' and processed_date < '${today}'))
     and source_system = '${source_system}' and invoice_nbr != '' and status='APPROVED' 
-    GROUP BY invoice_nbr, vendor_id, invoice_type
+    GROUP BY invoice_nbr, vendor_id, invoice_type, system_id 
     having tc ${queryOperator} ${lineItemPerProcess} 
     limit ${totalCountPerLoop + 1}`;
     console.log("query", query, totalCountPerLoop);
@@ -260,7 +261,7 @@ async function getInvoiceNbrData(connections, invoice_nbr, isBigData = false) {
     let query = `SELECT * FROM  ${apDbName} where source_system = '${source_system}' and `;
 
     if (isBigData) {
-      query += ` invoice_nbr = '${invoice_nbr}' and invoice_type = '${queryinvoiceType}' and vendor_id ='${queryVendorId}' 
+      query += ` invoice_nbr = '${invoice_nbr}' and invoice_type = '${queryinvoiceType}' and vendor_id ='${queryVendorId}'
       order by id limit ${lineItemPerProcess + 1} offset ${queryOffset}`;
     } else {
       query += ` invoice_nbr in (${invoice_nbr.join(",")})`;
@@ -499,7 +500,8 @@ function getUpdateQuery(item, invoiceId, isSuccess = true) {
                 WHERE source_system = '${source_system}' and 
                       invoice_nbr = '${item.invoice_nbr}' and 
                       invoice_type = '${item.invoice_type}'and 
-                      vendor_id = '${item.vendor_id}'`;
+                      vendor_id = '${item.vendor_id}' and
+                      system_id = '${item.system_id}'`;
 
     return query;
   } catch (error) {
@@ -588,9 +590,10 @@ async function cancellationProcess() {
   try {
     let cancelledData = [];
     try {
-      const query = `select ae.invoice_nbr,ae.internal_id from ${apDbName} ae join ${apDbNamePrev}interface_ap_epay_status aes
-      on ae.invoice_nbr=aes.invoice_nbr
-      where ae.internal_id is not null and ae.processed ='P' and aes.processed is null and aes.status ='CANCELLED' limit ${totalCountPerLoop + 1}`;
+      const query = `select distinct ae.invoice_nbr,ae.internal_id, ae.system_id, aes.status, ae.source_system from ${apDbName} ae join ${apDbNamePrev}interface_ap_epay_status aes
+      on ae.invoice_nbr=aes.invoice_nbr and ae.system_id=aes.system_id
+      where ae.internal_id is not null and ae.processed ='P' and ((aes.processed is null) or (aes.processed = 'F' and aes.processed_date < '${today}')) and
+      aes.status ='CANCELLED' limit ${totalCountPerLoop + 1}`;
       cancelledData = await fetchCancelAndBillPaymentData(query);
       currentCount = cancelledData.length
     } catch (error) {
@@ -666,7 +669,8 @@ async function getCancelAndBillPaymentUpdateQuery(item, id, isSuccess = true) {
       query += ` SET processed = 'F',`;
     }
     query += ` processed_date = '${today}' 
-                WHERE invoice_nbr = '${item.invoice_nbr}'`;
+                WHERE invoice_nbr = '${item.invoice_nbr}' and
+                system_id = '${item.system_id}'`;
 
     return query;
   } catch (error) {
@@ -690,11 +694,37 @@ async function mainCancelProcess(item) {
     );
     if (error.hasOwnProperty("customError")) {
       try {
+        await createAPFailedRecords(
+          connections,
+          item,
+          error,
+          apDbNamePrev
+        );
+        await sendDevNotification(
+          source_system,
+          "AP",
+          "netsuite_ap_ll cancelation",
+          "Erred out in cancelation main process ",
+          error
+        );
         return await getCancelAndBillPaymentUpdateQuery(item, "", false);
       } catch (error) {
         console.error("Error in mainCancelProcess: ", error);
+        await sendDevNotification(
+          source_system,
+          "AP",
+          "netsuite_ap_ll cancelation",
+          "Erred out in cancelation main process ",
+          error
+        );
       }
     } else {
+      await createAPFailedRecords(
+        connections,
+        item,
+        error,
+        apDbNamePrev
+      );
       await sendDevNotification(
         source_system,
         "AP",
@@ -712,9 +742,10 @@ async function billPaymentProcess() {
   try {
     let billPaymentData = [];
     try {
-      const query = `select ae.vendor_internal_id, ae.invoice_nbr,ae.internal_id,sum(ae.rate)-ae.discount, ae.system_id from ${apDbName} ae join ${apDbNamePrev}interface_ap_epay_status aes
+      const query = `select ae.vendor_internal_id, ae.invoice_nbr,ae.internal_id,sum(ae.rate)-ae.discount, ae.system_id, aes.status, ae.source_system from ${apDbName} ae join ${apDbNamePrev}interface_ap_epay_status aes
       on ae.invoice_nbr=aes.invoice_nbr
-      where ae.internal_id is not null and ae.processed ='P' and aes.processed is null and aes.status ='COMPLETED' group by ae.vendor_internal_id, ae.invoice_nbr,ae.internal_id, ae.system_id LIMIT ${totalCountPerLoop + 1}`;
+      where ae.internal_id is not null and ae.processed ='P' and ((aes.processed is null) or (aes.processed = 'F' and aes.processed_date < '${today}')) and aes.status ='COMPLETED' 
+      group by ae.vendor_internal_id, ae.invoice_nbr,ae.internal_id, ae.system_id LIMIT ${totalCountPerLoop + 1}`;
       billPaymentData = await fetchCancelAndBillPaymentData(query);
       currentCount = billPaymentData.length
     } catch (error) {
@@ -768,13 +799,14 @@ async function billPaymentProcess() {
 }
 
 async function mainBillPaymentProcess(item) {
+  const hardcode = getHardcodeData();
   let jsonPayload = {
     custbody_mfc_omni_unique_key: `${item.vendor_internal_id}-3490-${item.internal_id}`,
     entity: item.vendor_internal_id,
     account: 3490,
-    department: 15,
-    class: 9,
-    location: 413,
+    department: hardcode.department.head,
+    class: hardcode.class.head,
+    location: hardcode.location.head,
     tranid: item.system_id,
     apply: [
       {
@@ -794,6 +826,12 @@ async function mainBillPaymentProcess(item) {
     );
     if (error.hasOwnProperty("customError")) {
       try {
+        await createAPFailedRecords(
+          connections,
+          item,
+          error,
+          apDbNamePrev
+        );
         await sendDevNotification(
           source_system,
           "AP",
@@ -804,16 +842,36 @@ async function mainBillPaymentProcess(item) {
         return await getCancelAndBillPaymentUpdateQuery(item, "", false);
       } catch (error) {
         console.error("Error in mainCancelProcess: ", error);
+        await sendDevNotification(
+          source_system,
+          "AP",
+          "netsuite_ap_ll billPayment",
+          "Erred out in bill payment main process ",
+          error
+        );
       }
     } else {
-      await getCancelAndBillPaymentUpdateQuery(item, "", false);
+      await createAPFailedRecords(
+        connections,
+        item,
+        error,
+        apDbNamePrev
+      );
+      await sendDevNotification(
+        source_system,
+        "AP",
+        "netsuite_ap_ll billPayment",
+        "Erred out in bill payment main process ",
+        error
+      );
+      return await getCancelAndBillPaymentUpdateQuery(item, "", false);
     }
   }
 }
 
 async function sendBillpaymentData(payload) {
   try {
-    const endpoiont = "https://1238234-sb1.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=721&deploy=3"
+    const endpoiont = process.env.NS_BILL_PAYMENT_URL
     const options = {
       consumer_key: userConfig.token.consumer_key,
       consumer_secret_key: userConfig.token.consumer_secret,
