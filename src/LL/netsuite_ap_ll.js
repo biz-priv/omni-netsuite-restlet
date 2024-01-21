@@ -20,6 +20,7 @@ const apDbName = apDbNamePrev + "interface_ap_epay";
 const source_system = "LL";
 
 const today = getCustomDate();
+let currentCount = 0;
 const lineItemPerProcess = 500;
 let totalCountPerLoop = 20;
 let queryOffset = 0;
@@ -34,7 +35,6 @@ module.exports.handler = async (event, context, callback) => {
   userConfig = getConfig(source_system, process.env);
 
   console.log("event", event);
-  let currentCount = 0;
   totalCountPerLoop = event.hasOwnProperty("totalCountPerLoop")
     ? event.totalCountPerLoop
     : 21;
@@ -75,7 +75,7 @@ module.exports.handler = async (event, context, callback) => {
         processType,
       };
     } else if (processType == "billPayment") {
-      hasMoreData = await billPaymentProcess();
+      let hasMoreData = await billPaymentProcess();
       if (hasMoreData == "false") {
         await triggerReportLambda(process.env.NETSUIT_INVOICE_REPORT, "LL_AP");
       }
@@ -597,7 +597,7 @@ async function cancellationProcess() {
       cancelledData = await fetchCancelAndBillPaymentData(query);
       currentCount = cancelledData.length
     } catch (error) {
-      if (error == "No data found.") {
+      if (error.includes("No data found.")) {
         return "billPayment";
       } else {
         throw error
@@ -749,7 +749,7 @@ async function billPaymentProcess() {
       billPaymentData = await fetchCancelAndBillPaymentData(query);
       currentCount = billPaymentData.length
     } catch (error) {
-      if (error == "No data found.") {
+      if (error.includes("No data found.")) {
         return "false";
       } else {
         throw error
