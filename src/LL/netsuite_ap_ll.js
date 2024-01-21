@@ -81,7 +81,7 @@ module.exports.handler = async (event, context, callback) => {
       console.log("Inside bill payment process")
       let hasMoreData = await billPaymentProcess();
       if (hasMoreData == "false") {
-        await triggerReportLambda(process.env.NETSUIT_INVOICE_REPORT, "LL_AP");
+        await triggerReportLambda(process.env.NS_RESTLET_INVOICE_REPORT, "LL_AP");
       }
       return {
         hasMoreData,
@@ -156,7 +156,7 @@ module.exports.handler = async (event, context, callback) => {
     return { hasMoreData: "true", processType };
   } catch (error) {
     console.log("error", error);
-    await triggerReportLambda(process.env.NETSUIT_INVOICE_REPORT, "LL_AP");
+    await triggerReportLambda(process.env.NS_RESTLET_INVOICE_REPORT, "LL_AP");
     return { hasMoreData: "false" };
   }
 };
