@@ -61,7 +61,7 @@ module.exports.handler = async (event, context, callback) => {
     : null;
 
   processType = event.hasOwnProperty("queryVendorId") ? event.processType : "";
-
+  
   try {
     /**
      * Get connections
@@ -70,6 +70,7 @@ module.exports.handler = async (event, context, callback) => {
 
     if (processType == "cancellation") {
       processType = await cancellationProcess();
+      console.log("processType after cancellation process: ", processType)
       return {
         hasMoreData: "true",
         processType,
@@ -252,7 +253,8 @@ async function getDataGroupBy(connections) {
     }
     return result;
   } catch (error) {
-    throw "No data found.";
+    console.error("Error while fetching data: ", error)
+    throw error;
   }
 }
 
