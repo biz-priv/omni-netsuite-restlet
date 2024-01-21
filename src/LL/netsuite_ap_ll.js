@@ -69,6 +69,7 @@ module.exports.handler = async (event, context, callback) => {
     connections = await getConnectionToRds(process.env);
 
     if (processType == "cancellation") {
+      console.log("Inside cancellation process")
       processType = await cancellationProcess();
       console.log("processType after cancellation process: ", processType)
       return {
@@ -76,6 +77,7 @@ module.exports.handler = async (event, context, callback) => {
         processType,
       };
     } else if (processType == "billPayment") {
+      console.log("Inside bill payment process")
       let hasMoreData = await billPaymentProcess();
       if (hasMoreData == "false") {
         await triggerReportLambda(process.env.NETSUIT_INVOICE_REPORT, "LL_AP");
