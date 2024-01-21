@@ -68,7 +68,7 @@ module.exports.handler = async (event, context, callback) => {
      */
     connections = await getConnectionToRds(process.env);
 
-    if (processType == "cancelation") {
+    if (processType == "cancellation") {
       processType = await cancellationProcess();
       return {
         hasMoreData: "true",
@@ -97,7 +97,7 @@ module.exports.handler = async (event, context, callback) => {
         console.error("Error while fetching unique invoices: ", error)
         return {
           hasMoreData: "true",
-          processType: "cancelation"
+          processType: "cancellation"
         };
       }
 
@@ -119,7 +119,7 @@ module.exports.handler = async (event, context, callback) => {
         );
         return {
           hasMoreData: "true",
-          processType: "cancelation"
+          processType: "cancellation"
         };
       }
       /**
@@ -146,7 +146,7 @@ module.exports.handler = async (event, context, callback) => {
       await updateInvoiceId(connections, queryData);
 
       if (currentCount < totalCountPerLoop) {
-        processType = "cancelation";
+        processType = "cancellation";
       }
     }
     return { hasMoreData: "true", processType };
@@ -585,7 +585,7 @@ function getCustomDate() {
   return `${ye}-${mo}-${da}`;
 }
 
-//cancelation process
+//cancellation process
 async function cancellationProcess() {
   try {
     let cancelledData = [];
@@ -622,21 +622,21 @@ async function cancellationProcess() {
     /**
      * Updating total 21 invoices at once
      */
-    await updateInvoiceId(connections, queryData, "Cancelation is successfully posted But failed to update internal_id ");
+    await updateInvoiceId(connections, queryData, "cancellation is successfully posted But failed to update internal_id ");
 
     if (currentCount < totalCountPerLoop) {
       return "billPayment";
     }
 
-    return "cancelation"
+    return "cancellation"
 
   } catch (error) {
     console.error("cancellation Process: ", error);
     await sendDevNotification(
       source_system,
       "AP",
-      "netsuite_ap_ll cancelation",
-      "Erred out in cancelation process ",
+      "netsuite_ap_ll cancellation",
+      "Erred out in cancellation process ",
       error
     );
     return "billPayment";
@@ -685,7 +685,7 @@ async function mainCancelProcess(item) {
   };
   try {
     const id = await createInvoice(jsonPayload, { invoice_type: "IN" }, true);
-    console.info(`id = ${id} received after posting cancelation data to NS for internalid = ${item.internal_id}`)
+    console.info(`id = ${id} received after posting cancellation data to NS for internalid = ${item.internal_id}`)
     return await getCancelAndBillPaymentUpdateQuery(item, id);
   } catch (error) {
     console.error(
@@ -703,8 +703,8 @@ async function mainCancelProcess(item) {
         await sendDevNotification(
           source_system,
           "AP",
-          "netsuite_ap_ll cancelation",
-          "Erred out in cancelation main process ",
+          "netsuite_ap_ll cancellation",
+          "Erred out in cancellation main process ",
           error
         );
         return await getCancelAndBillPaymentUpdateQuery(item, "", false);
@@ -713,8 +713,8 @@ async function mainCancelProcess(item) {
         await sendDevNotification(
           source_system,
           "AP",
-          "netsuite_ap_ll cancelation",
-          "Erred out in cancelation main process ",
+          "netsuite_ap_ll cancellation",
+          "Erred out in cancellation main process ",
           error
         );
       }
@@ -728,8 +728,8 @@ async function mainCancelProcess(item) {
       await sendDevNotification(
         source_system,
         "AP",
-        "netsuite_ap_ll cancelation",
-        "Erred out in cancelation process ",
+        "netsuite_ap_ll cancellation",
+        "Erred out in cancellation process ",
         error
       );
       return await getCancelAndBillPaymentUpdateQuery(item, "", false);
@@ -737,7 +737,7 @@ async function mainCancelProcess(item) {
   }
 }
 
-//cancelation process
+//cancellation process
 async function billPaymentProcess() {
   try {
     let billPaymentData = [];
