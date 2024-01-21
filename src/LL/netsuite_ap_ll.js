@@ -61,6 +61,7 @@ module.exports.handler = async (event, context, callback) => {
     : null;
 
   processType = event.hasOwnProperty("queryVendorId") ? event.processType : "";
+  console.info("processType: ", processType)
   
   try {
     /**
