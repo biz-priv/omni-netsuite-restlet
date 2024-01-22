@@ -8,6 +8,8 @@ const {
   triggerReportLambda,
   sendDevNotification,
 } = require("../Helpers/helper");
+const {SNS_TOPIC_ARN } = process.env;
+const sns = new AWS.SNS({ region: process.env.REGION });
 
 const userConfig = {
   account: process.env.NETSUIT_AR_ACCOUNT,
@@ -68,6 +70,11 @@ module.exports.handler = async (event, context, callback) => {
     return { hasMoreData };
   } catch (error) {
     console.error("error:handler", error);
+    const params = {
+			Message: `Error in ${context.functionName}, Error: ${error.message}`,
+			TopicArn: SNS_TOPIC_ARN,
+		};
+    await sns.publish(params).promise();
     await triggerReportLambda(
       process.env.NS_RESTLET_INVOICE_REPORT,
       "CW_INTERCOMPANY"

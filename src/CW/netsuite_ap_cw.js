@@ -12,6 +12,8 @@ const {
 } = require("../../Helpers/helper");
 const { getBusinessSegment } = require("../../Helpers/businessSegmentHelper");
 const { get } = require("lodash");
+const {SNS_TOPIC_ARN } = process.env;
+const sns = new AWS.SNS({ region: process.env.REGION });
 
 let userConfig = "";
 let connections = "";
@@ -255,6 +257,11 @@ module.exports.handler = async (event, context, callback) => {
     }
   } catch (error) {
     console.error("error", error);
+    const params = {
+			Message: `Error in ${context.functionName}, Error: ${error.message}`,
+			TopicArn: SNS_TOPIC_ARN,
+		};
+    await sns.publish(params).promise();
     await triggerReportLambda(process.env.NS_RESTLET_INVOICE_REPORT, "CW_AP");
     await startNextStep();
     return { hasMoreData: "false" };
