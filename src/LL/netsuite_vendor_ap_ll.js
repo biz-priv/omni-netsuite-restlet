@@ -15,7 +15,7 @@ let totalCountPerLoop = 5;
 const today = getCustomDate();
 const apDbNamePrev = process.env.DATABASE_NAME;
 // const apDbName = "dw_dev.interface_ap";
-const apDbName = apDbNamePrev + "interface_ap";
+const apDbName = apDbNamePrev + "interface_ap_epay";
 const source_system = "LL";
 
 module.exports.handler = async (event, context, callback) => {
@@ -110,7 +110,6 @@ async function getVendorData(connections) {
                             (vendor_internal_id is null and processed_date < '${today}'))
                           and source_system = '${source_system}' and vendor_id is not null
                           limit ${totalCountPerLoop + 1}`;
-    //const query=`SELECT distinct vendor_id FROM  dw_uat.interface_ap where source_system = 'CW' and vendor_id='CNS'`
     console.log("query", query);
     const [rows] = await connections.execute(query);
     const result = rows;
@@ -288,9 +287,13 @@ async function updateFailedRecords(connections, vendor_id) {
                   processed = 'F',
                   processed_date = '${today}' 
                   WHERE vendor_id = '${vendor_id}' and source_system = '${source_system}' and vendor_internal_id is null`;
+    console.log("query for failed record: ", query)
     const result = await connections.query(query);
     return result;
-  } catch (error) { }
+  } catch (error) {
+    console.error("Error while updating failed records: ", error)
+    throw error
+   }
 }
 
 function getCustomDate() {
