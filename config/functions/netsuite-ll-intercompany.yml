@@ -1,0 +1,17 @@
+---
+function:
+  handler: src/netsuite_ll_intercompany.handler
+  layers:
+    - { Ref: CommonNetsuiteLibsLambdaLayer }
+  name: ${self:service}-intercompany-ll-${self:provider.stage}
+  description: Netsuite Intercompany api service - ${self:provider.stage}
+  runtime: nodejs18.x
+  memorySize: 2048
+  timeout: 900
+  package:
+    include:
+      - src/netsuite_ll_intercompany.js
+      - Helpers/**
+  environment:
+    NETSUITE_INTERCOMPANY_BASE_URL: ${ssm:/omni-dw/${self:provider.stage}/netsuit/intercompany/url}
+    NETSUITE_INTERCOMPANY_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-intercompany-ll-state-machine-${self:provider.stage}

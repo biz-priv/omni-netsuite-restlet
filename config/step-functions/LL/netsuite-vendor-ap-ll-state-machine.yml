@@ -1,0 +1,41 @@
+---
+stateMachine:
+  name: netsuite-vendor-ap-ll-restlet-state-machine-${self:provider.stage}
+  # events:
+  #   - schedule:
+  #       rate: cron(0 15 * * ? *) # CST:- 10:00 AM IST:- 08:30 pm
+  definition:
+    Comment: "State machine to update netsuit customer AP ll Restlet internal details"
+    StartAt: PublishEvents
+    States:
+      PublishEvents:
+        Type: Task
+        Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-vendor-ap-ll-${self:provider.stage}"
+        Next: EndChoice
+      EndChoice:
+        Type: Choice
+        Choices:
+          - Variable: $.hasMoreData
+            StringEquals: "false"
+            Next: InvokeLambda
+          - Variable: $.hasMoreData
+            StringEquals: "true"
+            Next: PublishEvents
+          - Variable: $.hasMoreData
+            StringEquals: "running"
+            Next: SuccessState
+      InvokeLambda:
+        Type: Task
+        Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-ap-ll-${self:provider.stage}"
+        Next: SecondEndChoice
+      SecondEndChoice:
+        Type: Choice
+        Choices:
+          - Variable: $.hasMoreData
+            StringEquals: "false"
+            Next: SuccessState
+          - Variable: $.hasMoreData
+            StringEquals: "true"
+            Next: InvokeLambda
+      SuccessState:
+        Type: Succeed
