@@ -77,11 +77,11 @@ module.exports.handler = async (event, context, callback) => {
             );
           }
         } catch (error) {
-          console.log("err", error);
+          console.error("err", error);
           await sendDevNotification(
             source_system,
             "AR",
-            "netsuite_customer_ar_m1 for loop customer_id" + customer_id,
+            "netsuite_customer_ar_cw for loop customer_id" + customer_id,
             singleItem,
             error
           );
@@ -130,7 +130,7 @@ async function getDataByCustomerId(connections, cus_id) {
     const query = `SELECT * FROM ${arDbName} 
                     where source_system = '${source_system}' and customer_id = '${cus_id}' 
                     limit 1`;
-    console.log("query", query);
+    console.info("query", query);
     const [rows] = await connections.execute(query);
     const result = rows;
     if (!result || result.length == 0) {
@@ -271,7 +271,7 @@ async function putCustomer(connections, customerData, customer_id) {
     const upsertQuery = `INSERT INTO ${arDbNamePrev}netsuit_customer (${tableStr})
                         VALUES (${valueStr}) ON DUPLICATE KEY
                         UPDATE ${updateStr};`;
-    console.log("query", upsertQuery);
+    console.info("query", upsertQuery);
     await connections.execute(upsertQuery);
 
     const updateQuery = `UPDATE ${arDbName} SET 
@@ -279,7 +279,7 @@ async function putCustomer(connections, customerData, customer_id) {
                     customer_internal_id = '${customer_internal_id}', 
                     processed_date = '${today}' 
                     WHERE customer_id = '${customer_id}' and source_system = '${source_system}' and customer_internal_id is null`;
-    console.log("updateQuery", updateQuery);
+    console.info("updateQuery", updateQuery);
     await connections.execute(updateQuery);
   } catch (error) {
     console.error(error);
@@ -293,10 +293,13 @@ async function updateFailedRecords(connections, cus_id) {
                   SET processed = 'F',
                   processed_date = '${today}' 
                   WHERE customer_id = '${cus_id}' and source_system = '${source_system}' and customer_internal_id is null`;
-    console.log("query", query);
+    console.info("query", query);
     const result = await connections.execute(query);
     return result;
-  } catch (error) { }
+  } catch (error) { 
+    console.error("Error while updating failed records: ", error)
+    throw error
+  }
 }
 
 function getCustomDate() {
@@ -319,7 +322,7 @@ async function checkOldProcessIsRunning() {
       maxResults: 2,
     }).promise();
 
-    console.log("AR listExecutions data", data);
+    console.info("AR listExecutions data", data);
     const cusExcList = data.executions;
 
     if (
@@ -327,7 +330,7 @@ async function checkOldProcessIsRunning() {
       cusExcList.length === 2 &&
       cusExcList[1].status === status
     ) {
-      console.log("AR running");
+      console.info("AR running");
       return true;
     } else {
       return false;

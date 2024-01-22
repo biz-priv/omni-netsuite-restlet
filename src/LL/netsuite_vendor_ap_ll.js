@@ -57,7 +57,7 @@ module.exports.handler = async (event, context, callback) => {
          * Update vendor details into DB
          */
         await putVendor(connections, vendorData, vendor_id);
-        console.log("count", i + 1);
+        console.info("count", i + 1);
       } catch (error) {
         let singleItem = "";
         try {
@@ -109,16 +109,16 @@ async function getVendorData(connections) {
                             (vendor_internal_id is null and processed_date < '${today}'))
                           and source_system = '${source_system}' and vendor_id is not null
                           limit ${totalCountPerLoop + 1}`;
-    console.log("query", query);
+    console.info("query", query);
     const [rows] = await connections.execute(query);
     const result = rows;
     if (!result || result.length == 0) {
       throw "No data found";
     }
-    console.log("result:",result);
+    console.info("result:",result);
     return result;
   } catch (error) {
-    console.log(error, "error");
+    console.error(error, "error");
     throw "getVendorData: No data found.";
   }
 }
@@ -128,7 +128,7 @@ async function getDataByVendorId(connections, vendor_id) {
     const query = `select * from ${apDbName} 
                     where source_system = '${source_system}' and vendor_id = '${vendor_id}' 
                     limit 1`;
-    console.log("query", query);
+    console.info("query", query);
     const [rows] = await connections.execute(query);
     const result = rows;
     if (!result || result.length == 0) {
@@ -151,15 +151,7 @@ async function getVendor(entityId) {
       url: `${process.env.NS_BASE_URL}&deploy=2&custscript_mfc_entity_eid=${entityId}`,
       method: "GET",
     };
-    // const options = {
-    //   consumer_key: 'ece3501945c67f84d09c1ce50e6fffe806d4dc553ea9894b586dc6abdb230809',
-    //   consumer_secret_key: '56bafee4f285a742d208c122cea5e0da328fd7e2810091c048ac350c1ae875c7',
-    //   token: '962bbe698cdaebb4e066daf2a71de998ab7971102a5b4f1a4e86998a9e885d42',
-    //   token_secret: '32d1cf73c4044bdc9ffce26d65f4a6d4e087e2041442cbe9d175547d184a2253',
-    //   realm: '1238234_SB1',
-    //   url: `${process.env.NS_BASE_URL_SB1}&deploy=2&custscript_mfc_entity_eid=${entityId}`,
-    //   method: "GET",
-    // };
+    
     const authHeader = getAuthorizationHeader(options);
 
     const configApi = {
@@ -264,7 +256,7 @@ async function putVendor(connections, vendorData, vendor_id) {
     const upsertQuery = `INSERT INTO ${apDbNamePrev}netsuit_vendors (${tableStr})
                         VALUES (${valueStr}) ON DUPLICATE KEY
                         UPDATE ${updateStr};`;
-    console.log("query", upsertQuery);
+    console.info("query", upsertQuery);
     await connections.execute(upsertQuery);
 
     const updateQuery = `UPDATE  ${apDbName} SET
@@ -272,10 +264,10 @@ async function putVendor(connections, vendorData, vendor_id) {
                     vendor_internal_id = '${vendor_internal_id}', 
                     processed_date = '${today}' 
                     WHERE vendor_id = '${vendor_id}' and source_system = '${source_system}' and vendor_internal_id is null;`;
-    console.log("updateQuery", updateQuery);
+    console.info("updateQuery", updateQuery);
     await connections.execute(updateQuery);
   } catch (error) {
-    console.log(error);
+    console.error(error);
     throw "Vendor Update Failed";
   }
 }
@@ -286,7 +278,7 @@ async function updateFailedRecords(connections, vendor_id) {
                   processed = 'F',
                   processed_date = '${today}' 
                   WHERE vendor_id = '${vendor_id}' and source_system = '${source_system}' and vendor_internal_id is null`;
-    console.log("query for failed record: ", query)
+    console.info("query for failed record: ", query)
     const result = await connections.query(query);
     return result;
   } catch (error) {
@@ -315,7 +307,7 @@ async function checkOldProcessIsRunning() {
       maxResults: 2,
     }).promise();
 
-    console.log("AP listExecutions data", data);
+    console.info("AP listExecutions data", data);
     const venExcList = data.executions;
 
     if (
@@ -323,7 +315,7 @@ async function checkOldProcessIsRunning() {
       venExcList.length === 2 &&
       venExcList[1].status === status
     ) {
-      console.log("AP running");
+      console.info("AP running");
       return true;
     } else {
       return false;

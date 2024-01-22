@@ -69,15 +69,15 @@ module.exports.handler = async (event, context, callback) => {
     connections = await getConnectionToRds(process.env);
 
     if (processType == "cancellation") {
-      console.log("Inside cancellation process")
+      console.info("Inside cancellation process")
       processType = await cancellationProcess();
-      console.log("processType after cancellation process: ", processType)
+      console.info("processType after cancellation process: ", processType)
       return {
         hasMoreData: "true",
         processType,
       };
     } else if (processType == "billPayment") {
-      console.log("Inside bill payment process")
+      console.info("Inside bill payment process")
       let hasMoreData = await billPaymentProcess();
       if (hasMoreData == "false") {
         await triggerReportLambda(process.env.NS_RESTLET_INVOICE_REPORT, "LL_AP");
@@ -106,17 +106,17 @@ module.exports.handler = async (event, context, callback) => {
 
       try {
         invoiceIDs = orderData.map((a) => "'" + a.invoice_nbr + "'");
-        console.log("orderData**", orderData.length, orderData);
-        console.log("invoiceIDs", invoiceIDs);
+        console.info("orderData**", orderData.length, orderData);
+        console.info("invoiceIDs", invoiceIDs);
         if (orderData.length === 1) {
-          console.log("length==1", orderData);
+          console.info("length==1", orderData);
         }
         currentCount = orderData.length;
         invoiceDataList = await getInvoiceNbrData(connections, invoiceIDs);
-        console.log("invoiceDataList", invoiceDataList.length);
+        console.info("invoiceDataList", invoiceDataList.length);
       } catch (error) {
-        console.log("error:getInvoiceNbrData:try:catch", error);
-        console.log(
+        console.error("error:getInvoiceNbrData:try:catch", error);
+        console.error(
           "invoiceIDs:try:catch found on getDataGroupBy but not in getInvoiceNbrData",
           invoiceIDs
         );
@@ -154,7 +154,7 @@ module.exports.handler = async (event, context, callback) => {
     }
     return { hasMoreData: "true", processType };
   } catch (error) {
-    console.log("error", error);
+    console.error("error", error);
     await triggerReportLambda(process.env.NS_RESTLET_INVOICE_REPORT, "LL_AP");
     return { hasMoreData: "false" };
   }
@@ -179,7 +179,7 @@ async function mainProcess(item, invoiceDataList) {
         e.system_id == item.system_id
       );
     });
-    console.log("dataList", dataList.length);
+    console.info("dataList", dataList.length);
 
     /**
      * set single item and customer data
@@ -190,12 +190,12 @@ async function mainProcess(item, invoiceDataList) {
      * Make Json payload
      */
     const jsonPayload = await makeJsonPayload(dataList);
-    console.log("JSONPayload", JSON.stringify(jsonPayload));
+    console.info("JSONPayload", JSON.stringify(jsonPayload));
     /**
      * create invoice
      */
     const invoiceId = await createInvoice(jsonPayload, singleItem);
-    console.log("invoiceId", invoiceId);
+    console.info("invoiceId", invoiceId);
 
     if (queryOperator == ">") {
       queryInvoiceId = invoiceId.toString();
@@ -207,7 +207,7 @@ async function mainProcess(item, invoiceDataList) {
     const getQuery = getUpdateQuery(singleItem, invoiceId);
     return getQuery;
   } catch (error) {
-    console.log("mainprocess:error", error);
+    console.error("mainprocess:error", error);
     if (error.hasOwnProperty("customError")) {
       let getQuery = "";
       try {
@@ -246,7 +246,7 @@ async function getDataGroupBy(connections) {
     GROUP BY invoice_nbr, vendor_id, invoice_type, system_id 
     having tc ${queryOperator} ${lineItemPerProcess} 
     limit ${totalCountPerLoop + 1}`;
-    console.log("query", query, totalCountPerLoop);
+    console.info("query", query, totalCountPerLoop);
 
     const [rows] = await connections.execute(query);
     const result = rows;
@@ -431,15 +431,6 @@ async function createInvoice(payload, singleItem, cancelFlag = false) {
     if (cancelFlag) {
       options.method = "PUT";
     }
-    // const options = {
-    //   consumer_key: 'ece3501945c67f84d09c1ce50e6fffe806d4dc553ea9894b586dc6abdb230809',
-    //   consumer_secret_key: '56bafee4f285a742d208c122cea5e0da328fd7e2810091c048ac350c1ae875c7',
-    //   token: '962bbe698cdaebb4e066daf2a71de998ab7971102a5b4f1a4e86998a9e885d42',
-    //   token_secret: '32d1cf73c4044bdc9ffce26d65f4a6d4e087e2041442cbe9d175547d184a2253',
-    //   realm: '1238234_SB1',
-    //   url: endpoiont,
-    //   method: 'POST',
-    // };
 
     const authHeader = getAuthorizationHeader(options);
 
@@ -455,7 +446,7 @@ async function createInvoice(payload, singleItem, cancelFlag = false) {
     };
 
     const response = await axios.request(configApi);
-    console.log("response", response);
+    console.info("response", response);
     if (response.status === 200 && response.data.status === "Success") {
       return response.data.id;
     } else {
@@ -493,7 +484,7 @@ async function createInvoice(payload, singleItem, cancelFlag = false) {
  */
 function getUpdateQuery(item, invoiceId, isSuccess = true) {
   try {
-    console.log("invoice_nbr ", item.invoice_nbr, invoiceId);
+    console.info("invoice_nbr ", item.invoice_nbr, invoiceId);
     let query = `UPDATE ${apDbName} `;
     if (isSuccess) {
       query += ` SET internal_id = '${invoiceId}', processed = 'P', `;
@@ -522,11 +513,11 @@ function getUpdateQuery(item, invoiceId, isSuccess = true) {
 async function updateInvoiceId(connections, query, errSub = "Invoice is created But failed to update internal_id ") {
   for (let index = 0; index < query.length; index++) {
     const element = query[index];
-    console.log("element", element);
+    console.info("element", element);
     try {
       await connections.execute(element);
     } catch (error) {
-      console.log("error:updateInvoiceId", error);
+      console.error("error:updateInvoiceId", error);
       await sendDevNotification(
         source_system,
         "AP",
@@ -649,7 +640,7 @@ async function cancellationProcess() {
 
 async function fetchCancelAndBillPaymentData(query) {
   try {
-    console.log("query", query, totalCountPerLoop);
+    console.info("query", query, totalCountPerLoop);
 
     const [rows] = await connections.execute(query);
     const result = rows;
@@ -665,7 +656,7 @@ async function fetchCancelAndBillPaymentData(query) {
 
 async function getCancelAndBillPaymentUpdateQuery(item, id, isSuccess = true) {
   try {
-    console.log("item ", item);
+    console.info("item ", item);
     let query = `UPDATE ${apDbNamePrev}interface_ap_epay_status `;
     if (isSuccess) {
       query += ` SET processed = 'P', internal_id = '${id}',`;
@@ -885,15 +876,6 @@ async function sendBillpaymentData(payload) {
       url: endpoiont,
       method: "POST",
     };
-    // const options = {
-    //   consumer_key: 'ece3501945c67f84d09c1ce50e6fffe806d4dc553ea9894b586dc6abdb230809',
-    //   consumer_secret_key: '56bafee4f285a742d208c122cea5e0da328fd7e2810091c048ac350c1ae875c7',
-    //   token: '962bbe698cdaebb4e066daf2a71de998ab7971102a5b4f1a4e86998a9e885d42',
-    //   token_secret: '32d1cf73c4044bdc9ffce26d65f4a6d4e087e2041442cbe9d175547d184a2253',
-    //   realm: '1238234_SB1',
-    //   url: endpoiont,
-    //   method: 'POST',
-    // };
 
     const authHeader = getAuthorizationHeader(options);
 
