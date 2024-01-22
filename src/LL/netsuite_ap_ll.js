@@ -742,7 +742,7 @@ async function mainCancelProcess(item) {
   }
 }
 
-//cancellation process
+//bill payment process
 async function billPaymentProcess() {
   try {
     let billPaymentData = [];
