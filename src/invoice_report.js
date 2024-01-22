@@ -11,9 +11,14 @@ const mailList = {
     AR: process.env.NETSUIT_AR_ERROR_EMAIL_TO,
     AP: process.env.NETSUIT_AP_ERROR_EMAIL_TO,
   },
-  INTERCOMPANY: {
+    INTERCOMPANY: {
     CW: process.env.NETSUIT_INTERCOMPANY_ERROR_EMAIL_TO,
+    WTLL: process.env.NETSUIT_INTERCOMPANY_ERROR_EMAIL_TO,
   },
+  LL: {
+    AR: process.env.NETSUIT_AR_ERROR_EMAIL_TO,
+    AP: process.env.NETSUIT_AP_ERROR_EMAIL_TO,
+  }
 };
 
 
@@ -121,9 +126,11 @@ async function getReportData(
     if (type === "AP") {
       // AP
       const table = `${dbname}interface_ap_api_logs`
-      const queryNonVenErr = `select source_system,error_msg,file_nbr,vendor_id,subsidiary,invoice_nbr,invoice_date,housebill_nbr,master_bill_nbr,invoice_type,controlling_stn,currency,charge_cd,total,posted_date,gc_code,tax_code,unique_ref_nbr,internal_ref_nbr,intercompany,id
+      const queryNonVenErr = `select source_system,error_msg,file_nbr,vendor_id,subsidiary,invoice_nbr,invoice_date,housebill_nbr,master_bill_nbr,invoice_type,controlling_stn,currency,charge_cd,total,posted_date,gc_code,tax_code,unique_ref_nbr,internal_ref_nbr,intercompany,id,epay_status,system_id
               from ${table} where source_system = '${sourceSystem}' and is_report_sent ='N' and 
               error_msg NOT LIKE '%Vendor not found%'`;
+
+      console.info(queryNonVenErr)
 
       const nonVenErrdata = await executeQuery(
         connections,
@@ -137,6 +144,10 @@ async function getReportData(
       if (sourceSystem == "CW") {
         mainQuery = `select ${dbname}interface_ap.*, CONCAT('Vendor not found. (vendor_id: ', CAST(vendor_id AS CHAR), ') Subsidiary: ', subsidiary) AS error_msg
         from ${dbname}interface_ap where source_system = '${sourceSystem}' and processed ='F' and vendor_id in (${queryVenErr})
+        GROUP BY invoice_nbr, vendor_id, invoice_type, gc_code, subsidiary, source_system;`;
+      } else if (sourceSystem == "LL") {
+        mainQuery = `select ${dbname}interface_ap_epay.*, CONCAT('Vendor not found. (vendor_id: ', CAST(vendor_id AS CHAR), ') Subsidiary: ', subsidiary) AS error_msg
+        from ${dbname}interface_ap_epay where source_system = '${sourceSystem}' and processed ='F' and vendor_id in (${queryVenErr})
         GROUP BY invoice_nbr, vendor_id, invoice_type, gc_code, subsidiary, source_system;`;
       }
       console.info("mainQuery", mainQuery);
@@ -166,6 +177,8 @@ async function getReportData(
           internal_ref_nbr: e?.internal_ref_nbr ?? "",
           intercompany: e?.intercompany ?? "",
           id: e?.id ?? "",
+          epay_status: e?.status ?? "",
+          system_id: e?.system_id ?? ""
         }));
         return [...formatedData, ...nonVenErrdata];
       } else {
@@ -188,6 +201,10 @@ async function getReportData(
                           and is_report_sent ='N' and error_msg LIKE '%Customer not found%'`;
       let mainQuery = "";
       if (sourceSystem == "CW") {
+        mainQuery = `select ${dbname}interface_ar.*, CONCAT('Customer not found. (customer_id: ', CAST(customer_id AS CHAR), ') Subsidiary: ', subsidiary) AS error_msg
+        from ${dbname}interface_ar where source_system = '${sourceSystem}' and processed ='F' and customer_id in (${queryCuErr})
+        GROUP BY invoice_nbr, invoice_type, gc_code, subsidiary`;
+      } else if (sourceSystem == "LL") {
         mainQuery = `select ${dbname}interface_ar.*, CONCAT('Customer not found. (customer_id: ', CAST(customer_id AS CHAR), ') Subsidiary: ', subsidiary) AS error_msg
         from ${dbname}interface_ar where source_system = '${sourceSystem}' and processed ='F' and customer_id in (${queryCuErr})
         GROUP BY invoice_nbr, invoice_type, gc_code, subsidiary`;
@@ -234,7 +251,7 @@ async function getReportData(
           query=`select distinct ia.*,ial.error_msg,ial.id  from ${dbname}interface_ap ia 
           join ${dbname}interface_intercompany_api_logs ial on ia.source_system=ial.source_system and 
           ia.internal_id=ial.ap_internal_id and ia.file_nbr= ial.file_nbr
-          where ia.intercompany ='Y' and ial.source_system = 'CW' and ial.is_report_sent = 'N'` 
+          where ia.intercompany ='Y' and ial.source_system = 'CW' and ial.is_report_sent = 'N'`
         } else {
           query=`
           select distinct ar.*, ial.error_msg, ial.id from ${dbname}interface_ar ar
@@ -242,8 +259,20 @@ async function getReportData(
           and ial.ar_internal_id  = ar.internal_id and ial.file_nbr = ar.file_nbr 
           where ar.intercompany ='Y' and ial.source_system ='CW' and ial.is_report_sent ='N'`
         }
+      } else if (sourceSystem === "WTLL") {
+        if (intercompanyType === "AP") {
+          query=`select distinct ia.*,ial.error_msg,ial.id  from ${dbname}interface_ap ia 
+          join ${dbname}interface_intercompany_api_logs ial on concat(ia.source_system, 'LL')=ial.source_system and 
+          ia.internal_id=ial.ap_internal_id 
+          where ia.intercompany ='Y' and ial.source_system = 'WTLL' and ial.is_report_sent = 'N'`
+        } else {
+          query=`
+          select distinct ar.*, ial.error_msg, ial.id from ${dbname}interface_ar ar
+          join ${dbname}interface_intercompany_api_logs ial on ial.source_system = concat('WT', ar.source_system)
+          and ial.ar_internal_id  = ar.internal_id 
+          where ar.intercompany ='Y' and ial.source_system ='WTLL' and ial.is_report_sent ='N'`
+        }
       }
-
       console.info("query:getReportData", query);
       const data = await executeQuery(connections, sourceSystem, query);
       console.info("query:data", data.length);
