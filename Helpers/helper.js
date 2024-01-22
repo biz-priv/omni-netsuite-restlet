@@ -74,7 +74,7 @@ function getConfig(source_system, env) {
       wsdlPath: env.NETSUIT_AR_WDSLPATH,
     },
     LL: {
-      account: "1238234_SB1",
+      account: env.NETSUIT_AR_ACCOUNT,
       apiVersion: "2021_2",
       accountSpecificUrl: true,
       token: {
