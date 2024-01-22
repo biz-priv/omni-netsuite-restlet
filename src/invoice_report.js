@@ -161,7 +161,7 @@ async function getReportData(
         GROUP BY invoice_nbr, vendor_id, invoice_type, gc_code, subsidiary, source_system;`;
       } else if (sourceSystem == "LL") {
         mainQuery = `select ${dbname}interface_ap_epay.*, CONCAT('Vendor not found. (vendor_id: ', CAST(vendor_id AS CHAR), ') Subsidiary: ', subsidiary) AS error_msg
-        from ${dbname}interface_ap where source_system = '${sourceSystem}' and processed ='F' and vendor_id in (${queryVenErr})
+        from ${dbname}interface_ap_epay where source_system = '${sourceSystem}' and processed ='F' and vendor_id in (${queryVenErr})
         GROUP BY invoice_nbr, vendor_id, invoice_type, gc_code, subsidiary, source_system;`;
       }
       console.info("mainQuery", mainQuery);

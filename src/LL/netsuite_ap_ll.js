@@ -602,7 +602,7 @@ async function cancellationProcess() {
       cancelledData = await fetchCancelAndBillPaymentData(query);
       currentCount = cancelledData.length
     } catch (error) {
-      if (error.includes("No data found.")) {
+      if (error == "No data found.") {
         return "billPayment";
       } else {
         throw error
@@ -754,7 +754,7 @@ async function billPaymentProcess() {
       billPaymentData = await fetchCancelAndBillPaymentData(query);
       currentCount = billPaymentData.length
     } catch (error) {
-      if (error.includes("No data found.")) {
+      if (error == "No data found.") {
         return "false";
       } else {
         throw error
