@@ -138,6 +138,8 @@ async function getReportData(
               from ${table} where source_system = '${sourceSystem}' and is_report_sent ='N' and 
               error_msg NOT LIKE '%Vendor not found%'`;
 
+      console.info(queryNonVenErr)
+
       const nonVenErrdata = await executeQuery(
         connections,
         sourceSystem,
@@ -191,6 +193,8 @@ async function getReportData(
           internal_ref_nbr: e?.internal_ref_nbr ?? "",
           intercompany: e?.intercompany ?? "",
           id: e?.id ?? "",
+          epay_status: e?.status ?? "",
+          system_id: e?.system_id ?? ""
         }));
         return [...formatedData, ...nonVenErrdata];
       } else {
