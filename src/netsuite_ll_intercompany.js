@@ -10,17 +10,17 @@ const {
 } = require("../Helpers/helper");
 
 const userConfig = {
-  account: process.env.NETSUIT_AR_ACCOUNT,
-  apiVersion: "2021_2",
-  realm: process.env.NETSUIT_AR_ACCOUNT,
-  signature_method: "HMAC-SHA256",
-  token: {
-    consumer_key: process.env.NETSUIT_LL_CONSUMER_KEY,
-    consumer_secret: process.env.NETSUIT_LL_CONSUMER_SECRET,
-    token_key: process.env.NETSUIT_LL_TOKEN_KEY,
-    token_secret: process.env.NETSUIT_LL_TOKEN_SECRET,
-  },
-};
+    account: process.env.NETSUIT_AR_ACCOUNT,
+    apiVersion: "2021_2",
+    realm: process.env.NETSUIT_AR_ACCOUNT,
+    signature_method: "HMAC-SHA256",
+    token: {
+      consumer_key: process.env.NETSUIT_AR_CONSUMER_KEY,
+      consumer_secret: process.env.NETSUIT_AR_CONSUMER_SECRET,
+      token_key: process.env.NETSUIT_AR_TOKEN_KEY,
+      token_secret: process.env.NETSUIT_AR_TOKEN_SECRET,
+    },
+  };
 const today = getCustomDate();
 const totalCountPerLoop = 5;
 const source_system = "LL";
