@@ -1,0 +1,17 @@
+---
+function:
+  handler: src/unpicked_report.handler
+  layers:
+    - { Ref: CommonNetsuiteLibsLambdaLayer }
+  name: ${self:service}-unpicked-report-${self:provider.stage}
+  description: Netsuite restlet Unpicked Report service - ${self:provider.stage}
+  runtime: nodejs18.x
+  memorySize: 2048
+  timeout: 900
+  environment:
+    NETSUIT_AR_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/to}
+    NETSUIT_AP_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAP/errorEmail/to}
+  package:
+    include:
+      - src/unpicked_report.js
+      - Helpers/**
