@@ -14,5 +14,5 @@ function:
       - Helpers/**
   environment:
     NETSUITE_VENDOR_STEP_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:netsuite-vendor-ap-tr-restlet-state-machine-${self:provider.stage}
-    NETSUIT_RESTLET_INV_URL: ${ssm:/omni-dw/${self:provider.stage}/invoice/apiEndpoint}
-    NETSUIT_RESTLET_CM_URL: ${ssm:/omni-dw/${self:provider.stage}/creditmemo/apiEndpoint}
+    NETSUIT_RESTLET_INV_URL: ${ssm:/omni-dw/${self:provider.stage}/invoice/apiEndpointSb2}
+    NETSUIT_RESTLET_CM_URL: ${ssm:/omni-dw/${self:provider.stage}/creditmemo/apiEndpointSb2}
