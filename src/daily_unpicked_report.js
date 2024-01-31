@@ -1,6 +1,8 @@
 const nodemailer = require("nodemailer");
 const moment = require("moment");
 const { parse } = require("json2csv");
+const pgp = require("pg-promise");
+const dbc = pgp({ capSQL: true });
 const {
   sendDevNotification,
   getConnectionToRds,
@@ -9,9 +11,11 @@ const dbname = process.env.DATABASE_NAME;
 
 module.exports.handler = async (event, context, callback) => {
   try {
-    connections = await getConnectionToRds(process.env);
+    let connections = await getConnectionToRds(process.env);
 
-    await generateCsvAndMail();
+    let redshiftConnections = dbc(getRedshiftConnection(process.env));
+
+    await generateCsvAndMail([connections, redshiftConnections], [dbname, ""]);
     return "Success";
   } catch (error) {
     console.error("error", error);
@@ -26,23 +30,37 @@ module.exports.handler = async (event, context, callback) => {
   }
 };
 
-async function generateCsvAndMail() {
+async function generateCsvAndMail(conArray, dbArray) {
   try {
-    const data = await getReportData();
-    if (!data || data.length == 0) return;
-    /**
-     * create csv
-     */
-    const fields = Object.keys(data[0]);
-    const opts = { fields };
-    const csv = parse(data, opts);
-    /**
-     * send mail
-     */
-    const filename = `Netsuite-Unpicked-Report-${
-      process.env.STAGE
-    }-report-${moment().format("DD-MM-YYYY")}.csv`;
-    await sendMail(filename, csv);
+    let emailData = [];
+    for (let source_system of ["ar", "ap"]) {
+      let data = [];
+      for (let i = 0; i < 2; i++) {
+        const rows = await getReportData(
+          conArray[i],
+          dbArray[i],
+          source_system
+        );
+        console.log("dbname: ", dbArray[i], "length: ", rows.length);
+        data = [...data, ...rows];
+      }
+      console.log("total length: ", data.length);
+      if (!data || data.length == 0) return;
+      /**
+       * create csv
+       */
+      const fields = Object.keys(data[0]);
+      const opts = { fields };
+      const csv = parse(data, opts);
+      /**
+       * send mail
+       */
+      const filename = `Netsuite-${source_system.toUpperCase()}-Unpicked-Report-${
+        process.env.STAGE
+      }-report-${moment().format("DD-MM-YYYY")}.csv`;
+      emailData.push({ filename, csv });
+    }
+    await sendMail(emailData);
   } catch (error) {
     console.error("error:generateCsvAndMail", error);
     await sendDevNotification(
@@ -54,8 +72,12 @@ async function generateCsvAndMail() {
     );
   }
 }
-async function executeQuery(connections, query) {
+async function executeQuery(connections, query, db) {
   try {
+    if (db == "") {
+      const rows = await connections.query(query);
+      return rows;
+    }
     const [rows] = await connections.execute(query);
     return rows;
   } catch (error) {
@@ -63,14 +85,21 @@ async function executeQuery(connections, query) {
   }
 }
 
-async function getReportData() {
+async function getReportData(connections, db) {
   try {
-    const query = `select source_system ,file_nbr ,vendor_id ,subsidiary ,invoice_nbr , housebill_nbr ,
+    let query = "";
+    if (source_system == "ap") {
+      query = `select source_system ,file_nbr ,vendor_id ,subsidiary ,invoice_nbr , housebill_nbr ,
     business_segment ,invoice_type,handling_stn ,currency ,rate,gc_code , unique_ref_nbr,mode_name ,service_level  
-    from ${dbname}interface_ap where intercompany ='Y' and pairing_available_flag is null`;
+    from ${db}interface_ap where intercompany ='Y' and pairing_available_flag is null`;
+    }else{
+      query = `select source_system ,file_nbr ,customer_id ,subsidiary ,invoice_nbr , housebill_nbr ,
+    business_segment ,invoice_type,handling_stn ,rate,gc_code , unique_ref_nbr,mode_name ,service_level  
+    from ${db}interface_ar where intercompany ='Y' and pairing_available_flag is null`;
+    }
 
     console.info(query);
-    const data = await executeQuery(connections, query);
+    const data = await executeQuery(connections, query, db);
     console.info("data", data.length);
     return data;
   } catch (error) {
@@ -79,7 +108,7 @@ async function getReportData() {
   }
 }
 
-async function sendMail(filename, content) {
+async function sendMail(emailData) {
   try {
     const transporter = nodemailer.createTransport({
       host: process.env.NETSUIT_AR_ERROR_EMAIL_HOST,
@@ -93,9 +122,9 @@ async function sendMail(filename, content) {
     const title = `Netsuite Unpicked Report ${process.env.STAGE.toUpperCase()}`;
     const message = {
       from: `${title} <${process.env.NETSUIT_AR_ERROR_EMAIL_FROM}>`,
-      to: "omnidev@bizcloudexperts.com",
+      to: "madhava.matta@bizcloudexperts.com",
       subject: title,
-      attachments: [{ filename, content }],
+      attachments: emailData,
       html: `
           <!DOCTYPE html>
           <html lang="en">
@@ -115,6 +144,22 @@ async function sendMail(filename, content) {
     await transporter.sendMail(message);
   } catch (error) {
     console.error("Mail:error", error);
-    throw error
+    throw error;
+  }
+}
+
+function getRedshiftConnection(env) {
+  try {
+    const dbUser = env.USER;
+    const dbPassword = env.PASS;
+    const dbHost = "omni-dw-prod.cnimhrgrtodg.us-east-1.redshift.amazonaws.com";
+    const dbPort = env.PORT;
+    const dbName = env.DBNAME;
+
+    const connectionString = `postgres://${dbUser}:${dbPassword}@${dbHost}:${dbPort}/${dbName}`;
+    return connectionString;
+  } catch (error) {
+    console.info("connection error:-  ", error);
+    throw "DB Connection Error";
   }
 }
