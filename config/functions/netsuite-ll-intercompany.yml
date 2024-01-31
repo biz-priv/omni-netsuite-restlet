@@ -13,5 +13,5 @@ function:
       - src/netsuite_ll_intercompany.js
       - Helpers/**
   environment:
-    NETSUITE_INTERCOMPANY_BASE_URL: ${ssm:/omni-dw/${self:provider.stage}/netsuit/intercompany/urlSb1}
+    NETSUITE_INTERCOMPANY_BASE_URL: ${ssm:/omni-dw/${self:provider.stage}/netsuit/intercompany/urlSb2}
     NETSUITE_INTERCOMPANY_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-intercompany-ll-state-machine-${self:provider.stage}
