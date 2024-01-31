@@ -93,7 +93,7 @@ async function sendMail(filename, content) {
     const title = `Netsuite Unpicked Report ${process.env.STAGE.toUpperCase()}`;
     const message = {
       from: `${title} <${process.env.NETSUIT_AR_ERROR_EMAIL_FROM}>`,
-      to: "madhava.matta@bizcloudexperts.com",
+      to: "omnidev@bizcloudexperts.com",
       subject: title,
       attachments: [{ filename, content }],
       html: `
