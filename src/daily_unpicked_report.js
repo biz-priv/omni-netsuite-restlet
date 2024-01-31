@@ -5,6 +5,7 @@ const {
   sendDevNotification,
   getConnectionToRds,
 } = require("../Helpers/helper");
+const dbname = process.env.DATABASE_NAME;
 
 module.exports.handler = async (event, context, callback) => {
   try {
@@ -14,12 +15,13 @@ module.exports.handler = async (event, context, callback) => {
     return "Success";
   } catch (error) {
     console.error("error", error);
-    // await sendDevNotification(
-    //   "UNPICKED-REPORT",
-    //   reportType,
-    //   "unpicked_report main fn",
-    //   error
-    // );
+    await sendDevNotification(
+      "ALL SOURCE SYSTEM UNPICKED DATA",
+      "REPORT",
+      "Unpicked_report main fn",
+      {},
+      error
+    );
     return "Failed";
   }
 };
@@ -43,16 +45,13 @@ async function generateCsvAndMail() {
     await sendMail(filename, csv);
   } catch (error) {
     console.error("error:generateCsvAndMail", error);
-    // await sendDevNotification(
-    //   "INVOICE-REPOR-" + sourceSystem,
-    //   "type value:- " +
-    //     type +
-    //     " and intercompanyType value:-" +
-    //     intercompanyType,
-    //   "invoice_report generateCsvAndMail",
-    //   {},
-    //   error
-    // );
+    await sendDevNotification(
+      "ALL SOURCE SYSTEM UNPICKED DATA",
+      "REPORT",
+      "Unpicked_report generateCsvAndMail",
+      {},
+      error
+    );
   }
 }
 async function executeQuery(connections, query) {
@@ -66,7 +65,9 @@ async function executeQuery(connections, query) {
 
 async function getReportData() {
   try {
-    const query = "";
+    const query = `select source_system ,file_nbr ,vendor_id ,subsidiary ,invoice_nbr , housebill_nbr ,
+    business_segment ,invoice_type,handling_stn ,currency ,rate,gc_code , unique_ref_nbr,mode_name ,service_level  
+    from ${dbname}interface_ap where intercompany ='Y' and pairing_available_flag is null`;
 
     console.info(query);
     const data = await executeQuery(connections, query);
@@ -81,18 +82,18 @@ async function getReportData() {
 async function sendMail(filename, content) {
   try {
     const transporter = nodemailer.createTransport({
-      host: "",
+      host: process.env.NETSUIT_AR_ERROR_EMAIL_HOST,
       port: 587,
       secure: false, // true for 465, false for other ports
       auth: {
-        user: "",
-        pass: "",
+        user: process.env.NETSUIT_AR_ERROR_EMAIL_USER,
+        pass: process.env.NETSUIT_AR_ERROR_EMAIL_PASS,
       },
     });
     const title = `Netsuite Unpicked Report ${process.env.STAGE.toUpperCase()}`;
     const message = {
       from: `${title} <${process.env.NETSUIT_AR_ERROR_EMAIL_FROM}>`,
-      to: "",
+      to: "madhava.matta@bizcloudexperts.com",
       subject: title,
       attachments: [{ filename, content }],
       html: `
