@@ -58,7 +58,7 @@ async function generateCsvAndMail(conArray, dbArray) {
       const filename = `Netsuite-${source_system.toUpperCase()}-Unpicked-Report-${
         process.env.STAGE
       }-report-${moment().format("DD-MM-YYYY")}.csv`;
-      emailData.push({ filename, csv });
+      emailData.push({ filename: filename, content: csv });
     }
     await sendMail(emailData);
   } catch (error) {
@@ -85,7 +85,7 @@ async function executeQuery(connections, query, db) {
   }
 }
 
-async function getReportData(connections, db) {
+async function getReportData(connections, db, source_system) {
   try {
     let query = "";
     if (source_system == "ap") {
@@ -122,7 +122,7 @@ async function sendMail(emailData) {
     const title = `Netsuite Unpicked Report ${process.env.STAGE.toUpperCase()}`;
     const message = {
       from: `${title} <${process.env.NETSUIT_AR_ERROR_EMAIL_FROM}>`,
-      to: "madhava.matta@bizcloudexperts.com",
+      to: "omnidev@bizcloudexperts.com",
       subject: title,
       attachments: emailData,
       html: `

@@ -61,8 +61,8 @@ module.exports.handler = async (event, context, callback) => {
     : null;
 
   processType = event.hasOwnProperty("processType") ? event.processType : "";
-  console.info("processType: ", processType)
-  
+  console.info("processType: ", processType);
+
   try {
     /**
      * Get connections
@@ -70,18 +70,21 @@ module.exports.handler = async (event, context, callback) => {
     connections = await getConnectionToRds(process.env);
 
     if (processType == "cancellation") {
-      console.log("Inside cancellation process")
+      console.log("Inside cancellation process");
       processType = await cancellationProcess();
-      console.log("processType after cancellation process: ", processType)
+      console.log("processType after cancellation process: ", processType);
       return {
         hasMoreData: "true",
         processType,
       };
     } else if (processType == "billPayment") {
-      console.log("Inside bill payment process")
+      console.log("Inside bill payment process");
       let hasMoreData = await billPaymentProcess();
       if (hasMoreData == "false") {
-        await triggerReportLambda(process.env.NS_RESTLET_INVOICE_REPORT, "LL_AP");
+        await triggerReportLambda(
+          process.env.NS_RESTLET_INVOICE_REPORT,
+          "LL_AP"
+        );
       }
       return {
         hasMoreData,
@@ -98,10 +101,10 @@ module.exports.handler = async (event, context, callback) => {
       try {
         orderData = await getDataGroupBy(connections);
       } catch (error) {
-        console.error("Error while fetching unique invoices: ", error)
+        console.error("Error while fetching unique invoices: ", error);
         return {
           hasMoreData: "true",
-          processType: "cancellation"
+          processType: "cancellation",
         };
       }
 
@@ -123,7 +126,7 @@ module.exports.handler = async (event, context, callback) => {
         );
         return {
           hasMoreData: "true",
-          processType: "cancellation"
+          processType: "cancellation",
         };
       }
       /**
@@ -256,7 +259,7 @@ async function getDataGroupBy(connections) {
     }
     return result;
   } catch (error) {
-    console.error("Error while fetching data: ", error)
+    console.error("Error while fetching data: ", error);
     throw error;
   }
 }
@@ -326,7 +329,7 @@ async function makeJsonPayload(data) {
           department: hardcode.department.line ?? "",
           class:
             hardcode.class.line[
-            e.business_segment.split(":")[1].trim().toLowerCase()
+              e.business_segment.split(":")[1].trim().toLowerCase()
             ],
           location: {
             refName: e.handling_stn ?? "",
@@ -520,7 +523,11 @@ function getUpdateQuery(item, invoiceId, isSuccess = true) {
  * @param {*} query
  * @returns
  */
-async function updateInvoiceId(connections, query, errSub = "Invoice is created But failed to update internal_id ") {
+async function updateInvoiceId(
+  connections,
+  query,
+  errSub = "Invoice is created But failed to update internal_id "
+) {
   for (let index = 0; index < query.length; index++) {
     const element = query[index];
     console.log("element", element);
@@ -595,22 +602,29 @@ async function cancellationProcess() {
   try {
     let cancelledData = [];
     try {
-      const query = `select distinct ae.invoice_nbr,ae.internal_id, ae.system_id, aes.status, ae.source_system from ${apDbName} ae join ${apDbNamePrev}interface_ap_epay_status aes
+    //   const query = `select distinct ae.invoice_nbr,ae.internal_id, ae.system_id, aes.status, ae.source_system from ${apDbName} ae join ${apDbNamePrev}interface_ap_epay_status aes
+    //   on ae.invoice_nbr=aes.invoice_nbr and ae.system_id=aes.system_id
+    //   where ae.internal_id is not null and ae.processed ='P' and ((aes.processed is null) or (aes.processed = 'F' and aes.processed_date < '${today}')) and
+    //   aes.status ='CANCELLED' limit ${totalCountPerLoop + 1}`;
+      const query = `select distinct ae.invoice_nbr,ae.internal_id, ae.system_id, aes.status, ae.source_system from 
+      (select distinct invoice_nbr,internal_id,system_id,status,source_system,processed from ${apDbName} where processed='P'
+      union select distinct invoice_nbr,internal_id,system_id,status,source_system,processed from ${apDbNamePrev}interface_ap_epay_his) ae 
+      join ${apDbNamePrev}interface_ap_epay_status aes
       on ae.invoice_nbr=aes.invoice_nbr and ae.system_id=aes.system_id
       where ae.internal_id is not null and ae.processed ='P' and ((aes.processed is null) or (aes.processed = 'F' and aes.processed_date < '${today}')) and
       aes.status ='CANCELLED' limit ${totalCountPerLoop + 1}`;
       cancelledData = await fetchCancelAndBillPaymentData(query);
-      currentCount = cancelledData.length
+      currentCount = cancelledData.length;
     } catch (error) {
       if (error == "No data found.") {
         return "billPayment";
       } else {
-        throw error
+        throw error;
       }
     }
 
     const perLoop = 15;
-    let queryData = []
+    let queryData = [];
     for (let index = 0; index < (cancelledData.length + 1) / perLoop; index++) {
       let newArray = cancelledData.slice(
         index * perLoop,
@@ -627,14 +641,17 @@ async function cancellationProcess() {
     /**
      * Updating total 21 invoices at once
      */
-    await updateInvoiceId(connections, queryData, "cancellation is successfully posted But failed to update internal_id ");
+    await updateInvoiceId(
+      connections,
+      queryData,
+      "cancellation is successfully posted But failed to update internal_id "
+    );
 
     if (currentCount < totalCountPerLoop) {
       return "billPayment";
     }
 
-    return "cancellation"
-
+    return "cancellation";
   } catch (error) {
     console.error("cancellation Process: ", error);
     await sendDevNotification(
@@ -659,7 +676,7 @@ async function fetchCancelAndBillPaymentData(query) {
     }
     return result;
   } catch (error) {
-    console.error("Error while fetching data: ", error)
+    console.error("Error while fetching data: ", error);
     throw error;
   }
 }
@@ -690,7 +707,9 @@ async function mainCancelProcess(item) {
   };
   try {
     const id = await createInvoice(jsonPayload, { invoice_type: "IN" }, true);
-    console.info(`id = ${id} received after posting cancellation data to NS for internalid = ${item.internal_id}`)
+    console.info(
+      `id = ${id} received after posting cancellation data to NS for internalid = ${item.internal_id}`
+    );
     return await getCancelAndBillPaymentUpdateQuery(item, id);
   } catch (error) {
     console.error(
@@ -699,12 +718,7 @@ async function mainCancelProcess(item) {
     );
     if (error.hasOwnProperty("customError")) {
       try {
-        await createAPFailedRecords(
-          connections,
-          item,
-          error,
-          apDbNamePrev
-        );
+        await createAPFailedRecords(connections, item, error, apDbNamePrev);
         await sendDevNotification(
           source_system,
           "AP",
@@ -724,12 +738,7 @@ async function mainCancelProcess(item) {
         );
       }
     } else {
-      await createAPFailedRecords(
-        connections,
-        item,
-        error,
-        apDbNamePrev
-      );
+      await createAPFailedRecords(connections, item, error, apDbNamePrev);
       await sendDevNotification(
         source_system,
         "AP",
@@ -747,22 +756,30 @@ async function billPaymentProcess() {
   try {
     let billPaymentData = [];
     try {
-      const query = `select ae.vendor_internal_id, ae.invoice_nbr,ae.internal_id,sum(ae.rate)-ae.discount, ae.system_id, aes.status, ae.source_system from ${apDbName} ae join ${apDbNamePrev}interface_ap_epay_status aes
-      on ae.invoice_nbr=aes.invoice_nbr
-      where ae.internal_id is not null and ae.processed ='P' and ((aes.processed is null) or (aes.processed = 'F' and aes.processed_date < '${today}')) and aes.status ='COMPLETED' 
-      group by ae.vendor_internal_id, ae.invoice_nbr,ae.internal_id, ae.system_id LIMIT ${totalCountPerLoop + 1}`;
+      //   const query = `select ae.vendor_internal_id, ae.invoice_nbr,ae.internal_id,sum(ae.rate)-ae.discount, ae.system_id, aes.status, ae.source_system from ${apDbName} ae join ${apDbNamePrev}interface_ap_epay_status aes
+      //   on ae.invoice_nbr=aes.invoice_nbr
+      //   where ae.internal_id is not null and ae.processed ='P' and ((aes.processed is null) or (aes.processed = 'F' and aes.processed_date < '${today}')) and aes.status ='COMPLETED'
+      //   group by ae.vendor_internal_id, ae.invoice_nbr,ae.internal_id, ae.system_id LIMIT ${totalCountPerLoop + 1}`;
+      const query = `select ae.vendor_internal_id, ae.invoice_nbr,ae.internal_id,sum(ae.rate)-COALESCE (ae.discount,0) as rate, 
+      ae.system_id, aes.status, ae.source_system
+      from (select distinct invoice_nbr,internal_id,system_id,status,source_system,processed,vendor_internal_id,rate,discount from ${apDbName} where processed='P'
+        union select distinct invoice_nbr,internal_id,system_id,status,source_system,processed,vendor_internal_id,rate,discount from ${apDbNamePrev}interface_ap_epay_his) ae 
+      join ${apDbNamePrev}interface_ap_epay_status aes on ae.invoice_nbr=aes.invoice_nbr
+        where ae.internal_id is not null and ae.processed ='P'
+        and ((aes.processed is null) or (aes.processed = 'F' and aes.processed_date < '${today}')) and aes.status ='COMPLETED'
+        group by ae.vendor_internal_id, ae.invoice_nbr,ae.internal_id, ae.system_id LIMIT ${totalCountPerLoop + 1}`;
       billPaymentData = await fetchCancelAndBillPaymentData(query);
-      currentCount = billPaymentData.length
+      currentCount = billPaymentData.length;
     } catch (error) {
       if (error == "No data found.") {
         return "false";
       } else {
-        throw error
+        throw error;
       }
     }
 
     const perLoop = 15;
-    let queryData = []
+    let queryData = [];
     for (
       let index = 0;
       index < (billPaymentData.length + 1) / perLoop;
@@ -783,13 +800,17 @@ async function billPaymentProcess() {
     /**
      * Updating total 21 invoices at once
      */
-    await updateInvoiceId(connections, queryData, "bill payment is successfully posted But failed to update internal_id ");
+    await updateInvoiceId(
+      connections,
+      queryData,
+      "bill payment is successfully posted But failed to update internal_id "
+    );
 
     if (currentCount < totalCountPerLoop) {
       return "false";
     }
 
-    return "true"
+    return "true";
   } catch (error) {
     console.error("cancellation Process: ", error);
     await sendDevNotification(
@@ -799,7 +820,7 @@ async function billPaymentProcess() {
       "Erred out in bill payment process ",
       error
     );
-    return "false"
+    return "false";
   }
 }
 
@@ -831,12 +852,7 @@ async function mainBillPaymentProcess(item) {
     );
     if (error.hasOwnProperty("customError")) {
       try {
-        await createAPFailedRecords(
-          connections,
-          item,
-          error,
-          apDbNamePrev
-        );
+        await createAPFailedRecords(connections, item, error, apDbNamePrev);
         await sendDevNotification(
           source_system,
           "AP",
@@ -856,12 +872,7 @@ async function mainBillPaymentProcess(item) {
         );
       }
     } else {
-      await createAPFailedRecords(
-        connections,
-        item,
-        error,
-        apDbNamePrev
-      );
+      await createAPFailedRecords(connections, item, error, apDbNamePrev);
       await sendDevNotification(
         source_system,
         "AP",
@@ -876,7 +887,7 @@ async function mainBillPaymentProcess(item) {
 
 async function sendBillpaymentData(payload) {
   try {
-    const endpoiont = process.env.NS_BILL_PAYMENT_URL
+    const endpoiont = process.env.NS_BILL_PAYMENT_URL;
     const options = {
       consumer_key: userConfig.token.consumer_key,
       consumer_secret_key: userConfig.token.consumer_secret,
@@ -938,4 +949,3 @@ async function sendBillpaymentData(payload) {
     }
   }
 }
-
