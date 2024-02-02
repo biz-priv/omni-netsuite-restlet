@@ -61,7 +61,7 @@ module.exports.handler = async (event, context, callback) => {
     } else {
       await triggerReportLambda(
         process.env.NS_RESTLET_INVOICE_REPORT,
-        "WTLL_INTERCOMPANY"
+        "LL_INTERCOMPANY"
       );
       hasMoreData = "false";
     }
@@ -70,7 +70,7 @@ module.exports.handler = async (event, context, callback) => {
     console.error("error:handler", error);
     await triggerReportLambda(
       process.env.NS_RESTLET_INVOICE_REPORT,
-      "WTLL_INTERCOMPANY"
+      "LL_INTERCOMPANY"
     );
     return { hasMoreData: "false" };
   }
@@ -129,7 +129,7 @@ async function updateAPandAr(connections, item, processed = "P") {
                 UPDATE ${apDbName} set 
                 intercompany_processed = '${processed}', 
                 intercompany_processed_date = '${today}'
-                where internal_id = '${item.ap_internal_id}' and source_system = 'WT';
+                where internal_id = '${item.ap_internal_id}';
                 `;
     console.info("query1", query1);
     await connections.query(query1);
@@ -161,7 +161,7 @@ async function mainProcess(connections, item) {
     console.error("error:mainProcess", error);
     if (error.hasOwnProperty("customError")) {
       await updateAPandAr(connections, item, "F");
-      item.source_system = "WTLL"
+      item.source_system = "LL"
       item.file_nbr = ""
       await createIntercompanyFailedRecords(connections, item, error);
     } else {

@@ -296,7 +296,7 @@ async function getReportData(
           and ial.ar_internal_id  = ar.internal_id and ial.file_nbr = ar.file_nbr 
           where ar.intercompany ='Y' and ial.source_system ='TR' and ial.is_report_sent ='N'`
         }
-      } else if (sourceSystem === "WTLL") {
+      } else if (sourceSystem === "LL") {
         if (intercompanyType === "AP") {
           query=`select distinct ia.*,ial.error_msg,ial.id  from ${dbname}interface_ap ia 
           join ${dbname}interface_intercompany_api_logs ial on concat(ia.source_system, 'LL')=ial.source_system and 
@@ -305,9 +305,9 @@ async function getReportData(
         } else {
           query=`
           select distinct ar.*, ial.error_msg, ial.id from ${dbname}interface_ar ar
-          join ${dbname}interface_intercompany_api_logs ial on ial.source_system = concat('WT', ar.source_system)
+          join ${dbname}interface_intercompany_api_logs ial on ial.source_system = 'LL'
           and ial.ar_internal_id  = ar.internal_id 
-          where ar.intercompany ='Y' and ial.source_system ='WTLL' and ial.is_report_sent ='N'`
+          where ar.intercompany ='Y' and ial.source_system ='LL' and ial.is_report_sent ='N'`
         }
       }
       console.info("query:getReportData", query);
