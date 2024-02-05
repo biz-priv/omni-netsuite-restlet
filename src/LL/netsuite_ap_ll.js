@@ -435,15 +435,6 @@ async function createInvoice(payload, singleItem, cancelFlag = false) {
     if (cancelFlag) {
       options.method = "PUT";
     }
-    // const options = {
-    //   consumer_key: 'ece3501945c67f84d09c1ce50e6fffe806d4dc553ea9894b586dc6abdb230809',
-    //   consumer_secret_key: '56bafee4f285a742d208c122cea5e0da328fd7e2810091c048ac350c1ae875c7',
-    //   token: '962bbe698cdaebb4e066daf2a71de998ab7971102a5b4f1a4e86998a9e885d42',
-    //   token_secret: '32d1cf73c4044bdc9ffce26d65f4a6d4e087e2041442cbe9d175547d184a2253',
-    //   realm: '1238234_SB1',
-    //   url: endpoiont,
-    //   method: 'POST',
-    // };
 
     const authHeader = getAuthorizationHeader(options);
 
@@ -888,15 +879,6 @@ async function sendBillpaymentData(payload) {
       url: endpoiont,
       method: "POST",
     };
-    // const options = {
-    //   consumer_key: 'ece3501945c67f84d09c1ce50e6fffe806d4dc553ea9894b586dc6abdb230809',
-    //   consumer_secret_key: '56bafee4f285a742d208c122cea5e0da328fd7e2810091c048ac350c1ae875c7',
-    //   token: '962bbe698cdaebb4e066daf2a71de998ab7971102a5b4f1a4e86998a9e885d42',
-    //   token_secret: '32d1cf73c4044bdc9ffce26d65f4a6d4e087e2041442cbe9d175547d184a2253',
-    //   realm: '1238234_SB1',
-    //   url: endpoiont,
-    //   method: 'POST',
-    // };
 
     const authHeader = getAuthorizationHeader(options);
 

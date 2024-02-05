@@ -261,6 +261,10 @@ async function createIntercompanyFailedRecords(connections, item, error) {
       current_dt: moment().format("YYYY-MM-DD"),
     };
 
+    if(item.sourceSystem == "LL"){
+      formatData.source_system = `${item.ar_source_system}${item.ap_source_system}`
+    }
+
     let tableStr = "";
     let valueStr = "";
     let objKyes = Object.keys(formatData);

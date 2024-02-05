@@ -299,15 +299,25 @@ async function getReportData(
       } else if (sourceSystem === "LL") {
         if (intercompanyType === "AP") {
           query=`select distinct ia.*,ial.error_msg,ial.id  from ${dbname}interface_ap ia 
-          join ${dbname}interface_intercompany_api_logs ial on concat(ia.source_system, 'LL')=ial.source_system and 
+          join ${dbname}interface_intercompany_api_logs ial on concat('LL', ia.source_system)=ial.source_system and 
           ia.internal_id=ial.ap_internal_id 
-          where ia.intercompany ='Y' and ial.source_system = 'WTLL' and ial.is_report_sent = 'N'`
+          where ia.intercompany ='Y' and ial.source_system in ('LLWT', 'LLTR', 'LLM1') and ial.is_report_sent = 'N'`
         } else {
           query=`
           select distinct ar.*, ial.error_msg, ial.id from ${dbname}interface_ar ar
-          join ${dbname}interface_intercompany_api_logs ial on ial.source_system = 'LL'
+          join ${dbname}interface_intercompany_api_logs ial on ial.source_system = concat(ar.source_system, 'WT')
           and ial.ar_internal_id  = ar.internal_id 
-          where ar.intercompany ='Y' and ial.source_system ='LL' and ial.is_report_sent ='N'`
+          where ar.intercompany ='Y' and ial.source_system ='LLWT' and ial.is_report_sent ='N'
+          union
+          select distinct ar.*, ial.error_msg, ial.id from ${dbname}interface_ar ar
+          join ${dbname}interface_intercompany_api_logs ial on ial.source_system = concat(ar.source_system, 'TR')
+          and ial.ar_internal_id  = ar.internal_id 
+          where ar.intercompany ='Y' and ial.source_system ='LLTR' and ial.is_report_sent ='N'
+          union
+          select distinct ar.*, ial.error_msg, ial.id from ${dbname}interface_ar ar
+          join ${dbname}interface_intercompany_api_logs ial on ial.source_system = concat(ar.source_system, 'M1')
+          and ial.ar_internal_id  = ar.internal_id 
+          where ar.intercompany ='Y' and ial.source_system ='LLM1' and ial.is_report_sent ='N'`
         }
       }
       console.info("query:getReportData", query);
