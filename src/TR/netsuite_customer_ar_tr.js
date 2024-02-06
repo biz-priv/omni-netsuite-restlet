@@ -60,6 +60,7 @@ module.exports.handler = async (event, context, callback) => {
         await putCustomer(connections, customerData, customer_id);
         console.info("count", i + 1);
       } catch (error) {
+        console.error("Main lambda: ", error)
         let singleItem = "";
         try {
           if (error.hasOwnProperty("customError")) {
@@ -94,6 +95,7 @@ module.exports.handler = async (event, context, callback) => {
       hasMoreData = "false";
     }
   } catch (error) {
+    console.error("Main lambda: ", error)
     hasMoreData = "false";
   }
 
@@ -120,6 +122,7 @@ async function getCustomerData(connections) {
     }
     return result;
   } catch (error) {
+    console.error("getCustomerData: ", error)
     throw "getCustomerData: No data found.";
   }
 }
@@ -137,6 +140,7 @@ async function getDataByCustomerId(connections, cus_id) {
     }
     return result[0];
   } catch (error) {
+    console.error("getDataByCustomerId: ", error)
     throw "getDataByCustomerId: No data found.";
   }
 }
@@ -297,7 +301,9 @@ async function updateFailedRecords(connections, cus_id) {
     console.info("query", query);
     const result = await connections.execute(query);
     return result;
-  } catch (error) { }
+  } catch (error) { 
+    console.error("updateFailedRecords: ", error)
+   }
 }
 
 function getCustomDate() {
