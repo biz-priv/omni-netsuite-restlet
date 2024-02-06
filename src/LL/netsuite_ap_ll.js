@@ -804,6 +804,7 @@ async function mainBillPaymentProcess(item) {
   let jsonPayload = {
     custbody_mfc_omni_unique_key: `${item.vendor_internal_id}-2793-${item.internal_id}`,
     entity: item.vendor_internal_id,
+    subsidiary: 65,
     account: 2793,
     department: hardcode.department.head,
     class: hardcode.class.head,
