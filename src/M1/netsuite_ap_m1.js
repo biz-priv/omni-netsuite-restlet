@@ -35,7 +35,7 @@ module.exports.handler = async (event, context, callback) => {
   let currentCount = 0;
   totalCountPerLoop = event.hasOwnProperty("totalCountPerLoop")
     ? event.totalCountPerLoop
-    : 21;
+    : totalCountPerLoop;
   queryOperator = event.hasOwnProperty("queryOperator")
     ? event.queryOperator
     : "<=";
@@ -336,7 +336,8 @@ async function getDataGroupBy(connections) {
     const query = `SELECT invoice_nbr, vendor_id, invoice_type, count(*) as tc FROM ${apDbName} 
     WHERE  ((internal_id is null and processed is null and vendor_internal_id is not null) or
     (vendor_internal_id is not null and processed ='F' and processed_date < '${today}'))
-    and source_system = '${source_system}' and invoice_nbr != ''
+    and source_system = '${source_system}' and invoice_nbr != '' and
+    ((intercompany='Y' and pairing_available_flag ='Y') OR intercompany='N')
     GROUP BY invoice_nbr, vendor_id, invoice_type
     having tc ${queryOperator} ${lineItemPerProcess} 
     limit ${totalCountPerLoop + 1}`;
@@ -432,10 +433,10 @@ async function makeJsonPayload(data) {
           custcol4: e.ref_nbr ?? "",
           custcol_riv_consol_nbr: e.consol_nbr ?? "",
           custcol_finalizedby: e.finalizedby ?? "", //prod:-2614  dev:-2511
-          custcol20: e.actual_weight ?? "",
-          custcol19: e.dest_zip ?? "",
-          custcol18: e.dest_state ?? "",
-          custcol17: e.dest_country ?? "",
+          custcol_actual_weight: e.actual_weight ?? "",//dev: custcol20  prod: custcol_actual_weight
+          custcol_destination_on_zip: e.dest_zip ?? "",//dev: custcol19 prod: custcol_destination_on_zip
+          custcol_destination_on_state: e.dest_state ?? "",//dev: custcol18 prod: custcol_destination_on_state
+          custcol_destination_on_country: e.dest_country ?? "",//dev: custcol17 prod: custcol_destination_on_country
           custcol_miles_distance: e.miles ?? "",
           custcol_chargeable_weight: e.chargeable_weight ?? "",
         };

@@ -219,15 +219,13 @@ async function makeJsonPayload(data) {
       entity: singleItem.customer_internal_id ?? "",
       subsidiary: singleItem.subsidiary ?? "",
       currency: singleItem.currency_internal_id ?? "",
-      otherrefnum: singleItem.file_nbr ?? "",//1730
+      otherrefnum: singleItem.order_ref ?? "",//1730
       custbody_mode: singleItem?.mode_name ?? "",//2673
       custbody_service_level: singleItem?.service_level ?? "",//2674
       custbody18: singleItem.finalized_date ?? "",//1745
       custbody9: singleItem.housebill_nbr ?? "",//1730 //here in soap we are passing file_nbr
       custbody17: singleItem.email ?? "",//1744
       custbody25: singleItem.zip_code ?? "",//2698
-      // custbody19: singleItem.unique_ref_nbr ?? "",//1734
-      ////////////////////////custbody19: singleItem.ee_invoice ?? "",//1735
       memo: singleItem.housebill_nbr ?? "",
       item: data.map((e) => {
         return {
@@ -252,10 +250,10 @@ async function makeJsonPayload(data) {
             refName: e.controlling_stn ?? "",//1166
           },
           custcol1: e.ready_date ? e.ready_date.toISOString() : "",//1164
-          custcol20: e.actual_weight ?? "",
-          custcol19: e.dest_zip ?? "",
-          custcol18: e.dest_state ?? "",
-          custcol17: e.dest_country ?? "",
+          custcol_actual_weight: e.actual_weight ?? "",//dev: custcol20  prod: custcol_actual_weight
+          custcol_destination_on_zip: e.dest_zip ?? "",//dev: custcol19 prod: custcol_destination_on_zip
+          custcol_destination_on_state: e.dest_state ?? "",//dev: custcol18 prod: custcol_destination_on_state
+          custcol_destination_on_country: e.dest_country ?? "",//dev: custcol17 prod: custcol_destination_on_country
           custcol_miles_distance: e.miles ?? "",
           custcol_chargeable_weight: e.chargeable_weight ?? "",
         };

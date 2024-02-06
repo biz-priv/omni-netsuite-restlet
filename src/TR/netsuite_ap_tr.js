@@ -35,7 +35,7 @@ module.exports.handler = async (event, context, callback) => {
   let currentCount = 0;
   totalCountPerLoop = event.hasOwnProperty("totalCountPerLoop")
     ? event.totalCountPerLoop
-    : 21;
+    : totalCountPerLoop;
   queryOperator = event.hasOwnProperty("queryOperator")
     ? event.queryOperator
     : "<=";
@@ -444,10 +444,10 @@ async function makeJsonPayload(data) {
           custcol4: e.ref_nbr ?? "",//1168
           custcol_riv_consol_nbr: e.consol_nbr ?? "",////prod:- 2510 dev:- 2506
           custcol_finalizedby: e.finalizedby ?? "",//2614
-          custcol20: e.actual_weight ?? "",
-          custcol19: e.dest_zip ?? "",
-          custcol18: e.dest_state ?? "",
-          custcol17: e.dest_country ?? "",
+          custcol_actual_weight: e.actual_weight ?? "",//dev: custcol20  prod: custcol_actual_weight
+          custcol_destination_on_zip: e.dest_zip ?? "",//dev: custcol19 prod: custcol_destination_on_zip
+          custcol_destination_on_state: e.dest_state ?? "",//dev: custcol18 prod: custcol_destination_on_state
+          custcol_destination_on_country: e.dest_country ?? "",//dev: custcol17 prod: custcol_destination_on_country
           custcol_miles_distance: e.miles ?? "",
           custcol_chargeable_weight: e.chargeable_weight ?? "",
         };
@@ -578,7 +578,6 @@ async function makeLineItemsJsonPayload(invoiceId, data) {
       id: invoiceId,
       item: data.map((e) => {
         return {
-          // custcol_mfc_line_unique_key:"",
           taxcode: e.tax_code_internal_id ?? "",
           item: e.charge_cd_internal_id ?? "",
           description: e.charge_cd_desc ?? "",

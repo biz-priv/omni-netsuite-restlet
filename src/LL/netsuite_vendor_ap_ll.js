@@ -14,7 +14,6 @@ let userConfig = "";
 let totalCountPerLoop = 5;
 const today = getCustomDate();
 const apDbNamePrev = process.env.DATABASE_NAME;
-// const apDbName = "dw_dev.interface_ap";
 const apDbName = apDbNamePrev + "interface_ap_epay";
 const source_system = "LL";
 

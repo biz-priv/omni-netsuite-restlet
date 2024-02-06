@@ -16,7 +16,6 @@ let connections = "";
 
 const apDbNamePrev = process.env.DATABASE_NAME;
 const apDbName = apDbNamePrev + "interface_ap_epay";
-// const apDbName="dw_dev.interface_ap"
 const source_system = "LL";
 
 const today = getCustomDate();
@@ -37,7 +36,7 @@ module.exports.handler = async (event, context, callback) => {
   console.log("event", event);
   totalCountPerLoop = event.hasOwnProperty("totalCountPerLoop")
     ? event.totalCountPerLoop
-    : 21;
+    : totalCountPerLoop;
   queryOperator = event.hasOwnProperty("queryOperator")
     ? event.queryOperator
     : "<=";
@@ -343,10 +342,10 @@ async function makeJsonPayload(data) {
           custcol4: e.ref_nbr ?? "",
           custcol_riv_consol_nbr: e.consol_nbr ?? "",
           custcol_finalizedby: e.finalizedby ?? "",
-          custcol_actual_weight: e.actual_weight ?? "",
-          custcol_destination_on_zip: e.dest_zip ?? "",
-          custcol_destination_on_state: e.dest_state ?? "",
-          custcol_destination_on_country: e.dest_country ?? "",
+          custcol_actual_weight: e.actual_weight ?? "",//dev: custcol20  prod: custcol_actual_weight
+          custcol_destination_on_zip: e.dest_zip ?? "",//dev: custcol19 prod: custcol_destination_on_zip
+          custcol_destination_on_state: e.dest_state ?? "",//dev: custcol18 prod: custcol_destination_on_state
+          custcol_destination_on_country: e.dest_country ?? "",//dev: custcol17 prod: custcol_destination_on_country
           custcol_miles_distance: e.miles ?? "",
           custcol_chargeable_weight: e.chargeable_weight ?? "",
         };
@@ -811,6 +810,7 @@ async function mainBillPaymentProcess(item) {
   let jsonPayload = {
     custbody_mfc_omni_unique_key: `${item.vendor_internal_id}-3490-${item.internal_id}`,
     entity: item.vendor_internal_id,
+    subsidiary: 65,
     account: 3490,
     department: hardcode.department.head,
     class: hardcode.class.head,
