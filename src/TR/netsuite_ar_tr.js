@@ -78,6 +78,7 @@ module.exports.handler = async (event, context, callback) => {
     }
     return { hasMoreData };
   } catch (error) {
+    console.error("Main lambda: ", error)
     await triggerReportLambda(process.env.NS_RESTLET_INVOICE_REPORT, "TR_AR");
     await startNextStep();
     return { hasMoreData: "false" };
@@ -184,7 +185,7 @@ async function getInvoiceNbrData(connections, invoice_nbr) {
     }
     return result;
   } catch (error) {
-    console.error("error");
+    console.error(error);
     throw "No data found.";
   }
 }
@@ -200,7 +201,7 @@ async function makeJsonPayload(data) {
      * head level details
      */
     const payload = {
-      custbodytmsdebtorcreditorid: singleItem.bill_to_nbr,
+      custbodytmsdebtorcreditorid: singleItem.bill_to_nbr ?? "",
       custbody_mfc_omni_unique_key:
         singleItem.invoice_nbr +
         "-" +
@@ -220,19 +221,16 @@ async function makeJsonPayload(data) {
       entity: singleItem.customer_internal_id ?? "",
       subsidiary: singleItem.subsidiary ?? "",
       currency: singleItem.currency_internal_id ?? "",
-      otherrefnum: singleItem.file_nbr ?? "",//1730
+      otherrefnum: singleItem.order_ref ?? "",//1730
       custbody_mode: singleItem?.mode_name ?? "",//2673
       custbody_service_level: singleItem?.service_level ?? "",//2674
       custbody18: singleItem.finalized_date ?? "",//1745
       custbody9: singleItem.housebill_nbr ?? "",//1730 //here in soap we are passing file_nbr
       custbody17: singleItem.email ?? "",//1744
       custbody25: singleItem.zip_code ?? "",//2698
-      // custbody19: singleItem.unique_ref_nbr ?? "",//1734
-      ////////////////////////custbody19: singleItem.ee_invoice ?? "",//1735
       memo: singleItem.housebill_nbr ?? "",
       item: data.map((e) => {
         return {
-          // custcol_mfc_line_unique_key:"",
           item: e.charge_cd_internal_id ?? "",
           taxcode: e?.tax_code_internal_id ?? "",
           description: e?.charge_cd_desc ?? "",

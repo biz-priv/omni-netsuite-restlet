@@ -35,7 +35,7 @@ module.exports.handler = async (event, context, callback) => {
   let currentCount = 0;
   totalCountPerLoop = event.hasOwnProperty("totalCountPerLoop")
     ? event.totalCountPerLoop
-    : 21;
+    : totalCountPerLoop;
   queryOperator = event.hasOwnProperty("queryOperator")
     ? event.queryOperator
     : "<=";
@@ -392,7 +392,7 @@ async function makeJsonPayload(data) {
      * head level details
      */
     const payload = {
-      custbodytmsdebtorcreditorid: singleItem.bill_to_nbr,
+      custbodytmsdebtorcreditorid: singleItem.bill_to_nbr ?? "",
       custbody_mfc_omni_unique_key:
         singleItem.invoice_nbr +
         "-" +
@@ -579,7 +579,6 @@ async function makeLineItemsJsonPayload(invoiceId, data) {
       id: invoiceId,
       item: data.map((e) => {
         return {
-          // custcol_mfc_line_unique_key:"",
           taxcode: e.tax_code_internal_id ?? "",
           item: e.charge_cd_internal_id ?? "",
           description: e.charge_cd_desc ?? "",
