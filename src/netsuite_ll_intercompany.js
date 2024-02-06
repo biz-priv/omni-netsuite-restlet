@@ -10,9 +10,9 @@ const {
 } = require("../Helpers/helper");
 
 const userConfig = {
-  account: "1238234_SB1",
+  account: process.env.NETSUIT_AR_ACCOUNT,
   apiVersion: "2021_2",
-  realm: "1238234_SB1",
+  realm: process.env.NETSUIT_AR_ACCOUNT,
   signature_method: "HMAC-SHA256",
   token: {
     consumer_key: process.env.NETSUIT_LL_CONSUMER_KEY,
@@ -42,7 +42,7 @@ module.exports.handler = async (event, context, callback) => {
     /**
      * Get connections
      */
-    const connections = await getConnectionToRds(process.env) ;
+    const connections = await getConnectionToRds(process.env);
     /**
      * Get invoice internal ids from ${apDbName} and ${arDbName}
      */
@@ -61,7 +61,7 @@ module.exports.handler = async (event, context, callback) => {
     } else {
       await triggerReportLambda(
         process.env.NS_RESTLET_INVOICE_REPORT,
-        "WTLL_INTERCOMPANY"
+        "LL_INTERCOMPANY"
       );
       hasMoreData = "false";
     }
@@ -70,7 +70,7 @@ module.exports.handler = async (event, context, callback) => {
     console.error("error:handler", error);
     await triggerReportLambda(
       process.env.NS_RESTLET_INVOICE_REPORT,
-      "WTLL_INTERCOMPANY"
+      "LL_INTERCOMPANY"
     );
     return { hasMoreData: "false" };
   }
@@ -83,25 +83,38 @@ module.exports.handler = async (event, context, callback) => {
 async function getData(connections) {
   try {
     const query = `
-    select distinct ar.invoice_nbr , ar.ar_internal_id , ap.ap_internal_id, ap.invoice_type
-    from (select distinct invoice_nbr ,invoice_type ,internal_id as ar_internal_id ,total
+    select distinct ar.invoice_nbr , ar.ar_internal_id , ap.ap_internal_id, ap.invoice_type, ar.ar_source_system, ap.ap_source_system
+    from (select distinct invoice_nbr ,invoice_type ,internal_id as ar_internal_id ,total, source_system as ar_source_system
         from ${arDbName} ia
           where source_system = 'LL' and intercompany = 'Y' and pairing_available_flag = 'Y' and processed = 'P' and (intercompany_processed_date is null or
             (intercompany_processed = 'F' and intercompany_processed_date < '${today}'))
-        )ar
+    )ar
+        
     join
-        (
-        select distinct a.invoice_nbr ,a.invoice_type ,a.internal_id as ap_internal_id,total
-            from ${apDbName} a
-            where source_system = 'WT' and intercompany = 'Y' and pairing_available_flag = 'Y' and processed = 'P' and (intercompany_processed_date is null or
-                        (intercompany_processed = 'F' and intercompany_processed_date < '${today}'))
-        )ap
+    
+    ((select distinct a.invoice_nbr ,a.invoice_type ,a.internal_id as ap_internal_id,total, source_system as ap_source_system
+        from ${apDbName} a
+        where source_system = 'WT' and intercompany = 'Y' and pairing_available_flag = 'Y' and processed = 'P' and (intercompany_processed_date is null or
+                        (intercompany_processed = 'F' and intercompany_processed_date < '${today}')))
+    union
+
+	(select distinct a.invoice_nbr ,a.invoice_type ,a.internal_id as ap_internal_id,total, source_system as ap_source_system
+        from ${apDbName} a
+        where source_system = 'TR' and intercompany = 'Y' and pairing_available_flag = 'Y' and processed = 'P' and (intercompany_processed_date is null or
+                        (intercompany_processed = 'F' and intercompany_processed_date < '${today}')))
+    union
+
+	(select distinct a.invoice_nbr ,a.invoice_type ,a.internal_id as ap_internal_id,total, source_system as ap_source_system
+        from ${apDbName} a
+        where source_system = 'M1' and intercompany = 'Y' and pairing_available_flag = 'Y' and processed = 'P' and (intercompany_processed_date is null or
+                        (intercompany_processed = 'F' and intercompany_processed_date < '${today}')))
+    )ap
     on ar.invoice_type = ap.invoice_type
     and ar.invoice_nbr = ap.invoice_nbr
     limit ${totalCountPerLoop + 1}`;
-    console.info("query",query);
+    console.info("query", query);
     const [rows] = await connections.execute(query);
-    const result = rows
+    const result = rows;
     if (!result || result.length == 0) {
       throw "No data found.";
     }
@@ -129,7 +142,7 @@ async function updateAPandAr(connections, item, processed = "P") {
                 UPDATE ${apDbName} set 
                 intercompany_processed = '${processed}', 
                 intercompany_processed_date = '${today}'
-                where internal_id = '${item.ap_internal_id}' and source_system = 'WT';
+                where internal_id = '${item.ap_internal_id}';
                 `;
     console.info("query1", query1);
     await connections.query(query1);
@@ -161,8 +174,8 @@ async function mainProcess(connections, item) {
     console.error("error:mainProcess", error);
     if (error.hasOwnProperty("customError")) {
       await updateAPandAr(connections, item, "F");
-      item.source_system = "WTLL"
-      item.file_nbr = ""
+      item.source_system = "LL";
+      item.file_nbr = "";
       await createIntercompanyFailedRecords(connections, item, error);
     } else {
       await sendDevNotification(
@@ -252,11 +265,13 @@ async function checkOldProcessIsRunning() {
     const status = "RUNNING";
     const stepfunctions = new AWS.StepFunctions();
 
-    const data = await stepfunctions.listExecutions({
-      stateMachineArn: intercompanyArn,
-      statusFilter: status,
-      maxResults: 2,
-    }).promise();
+    const data = await stepfunctions
+      .listExecutions({
+        stateMachineArn: intercompanyArn,
+        statusFilter: status,
+        maxResults: 2,
+      })
+      .promise();
 
     console.info("Intercompany listExecutions data", data);
     const intercomExcList = data.executions;

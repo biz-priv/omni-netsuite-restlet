@@ -113,6 +113,7 @@ functions:
   netsuite-vendor-ap-ll-restlet: ${file(config/functions/LL/netsuite-vendor-ap-ll.yml):function}
   #report fn
   invoice-report: ${file(config/functions/invoice-report.yml):function}
+  daily-unpicked-report: ${file(config/functions/daily-unpicked-report.yml):function}
   #Intercompany fn
   netsuite-cw-intercompany-restlet: ${file(config/functions/netsuite-intercompany.yml):function}
   netsuite-tr-intercompany-restlet: ${file(config/functions/netsuite-tr-intercompany.yml):function}

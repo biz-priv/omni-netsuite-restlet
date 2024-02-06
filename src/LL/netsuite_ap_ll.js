@@ -16,7 +16,6 @@ let connections = "";
 
 const apDbNamePrev = process.env.DATABASE_NAME;
 const apDbName = apDbNamePrev + "interface_ap_epay";
-// const apDbName="dw_dev.interface_ap"
 const source_system = "LL";
 
 const today = getCustomDate();
@@ -37,7 +36,7 @@ module.exports.handler = async (event, context, callback) => {
   console.log("event", event);
   totalCountPerLoop = event.hasOwnProperty("totalCountPerLoop")
     ? event.totalCountPerLoop
-    : 21;
+    : totalCountPerLoop;
   queryOperator = event.hasOwnProperty("queryOperator")
     ? event.queryOperator
     : "<=";
@@ -61,8 +60,8 @@ module.exports.handler = async (event, context, callback) => {
     : null;
 
   processType = event.hasOwnProperty("processType") ? event.processType : "";
-  console.info("processType: ", processType)
-  
+  console.info("processType: ", processType);
+
   try {
     /**
      * Get connections
@@ -70,18 +69,21 @@ module.exports.handler = async (event, context, callback) => {
     connections = await getConnectionToRds(process.env);
 
     if (processType == "cancellation") {
-      console.log("Inside cancellation process")
+      console.log("Inside cancellation process");
       processType = await cancellationProcess();
-      console.log("processType after cancellation process: ", processType)
+      console.log("processType after cancellation process: ", processType);
       return {
         hasMoreData: "true",
         processType,
       };
     } else if (processType == "billPayment") {
-      console.log("Inside bill payment process")
+      console.log("Inside bill payment process");
       let hasMoreData = await billPaymentProcess();
       if (hasMoreData == "false") {
-        await triggerReportLambda(process.env.NS_RESTLET_INVOICE_REPORT, "LL_AP");
+        await triggerReportLambda(
+          process.env.NS_RESTLET_INVOICE_REPORT,
+          "LL_AP"
+        );
       }
       return {
         hasMoreData,
@@ -98,10 +100,10 @@ module.exports.handler = async (event, context, callback) => {
       try {
         orderData = await getDataGroupBy(connections);
       } catch (error) {
-        console.error("Error while fetching unique invoices: ", error)
+        console.error("Error while fetching unique invoices: ", error);
         return {
           hasMoreData: "true",
-          processType: "cancellation"
+          processType: "cancellation",
         };
       }
 
@@ -123,7 +125,7 @@ module.exports.handler = async (event, context, callback) => {
         );
         return {
           hasMoreData: "true",
-          processType: "cancellation"
+          processType: "cancellation",
         };
       }
       /**
@@ -256,7 +258,7 @@ async function getDataGroupBy(connections) {
     }
     return result;
   } catch (error) {
-    console.error("Error while fetching data: ", error)
+    console.error("Error while fetching data: ", error);
     throw error;
   }
 }
@@ -326,7 +328,7 @@ async function makeJsonPayload(data) {
           department: hardcode.department.line ?? "",
           class:
             hardcode.class.line[
-            e.business_segment.split(":")[1].trim().toLowerCase()
+              e.business_segment.split(":")[1].trim().toLowerCase()
             ],
           location: {
             refName: e.handling_stn ?? "",
@@ -340,10 +342,10 @@ async function makeJsonPayload(data) {
           custcol4: e.ref_nbr ?? "",
           custcol_riv_consol_nbr: e.consol_nbr ?? "",
           custcol_finalizedby: e.finalizedby ?? "",
-          custcol_actual_weight: e.actual_weight ?? "",
-          custcol_destination_on_zip: e.dest_zip ?? "",
-          custcol_destination_on_state: e.dest_state ?? "",
-          custcol_destination_on_country: e.dest_country ?? "",
+          custcol_actual_weight: e.actual_weight ?? "",//dev: custcol20  prod: custcol_actual_weight
+          custcol_destination_on_zip: e.dest_zip ?? "",//dev: custcol19 prod: custcol_destination_on_zip
+          custcol_destination_on_state: e.dest_state ?? "",//dev: custcol18 prod: custcol_destination_on_state
+          custcol_destination_on_country: e.dest_country ?? "",//dev: custcol17 prod: custcol_destination_on_country
           custcol_miles_distance: e.miles ?? "",
           custcol_chargeable_weight: e.chargeable_weight ?? "",
         };
@@ -432,15 +434,6 @@ async function createInvoice(payload, singleItem, cancelFlag = false) {
     if (cancelFlag) {
       options.method = "PUT";
     }
-    // const options = {
-    //   consumer_key: 'ece3501945c67f84d09c1ce50e6fffe806d4dc553ea9894b586dc6abdb230809',
-    //   consumer_secret_key: '56bafee4f285a742d208c122cea5e0da328fd7e2810091c048ac350c1ae875c7',
-    //   token: '962bbe698cdaebb4e066daf2a71de998ab7971102a5b4f1a4e86998a9e885d42',
-    //   token_secret: '32d1cf73c4044bdc9ffce26d65f4a6d4e087e2041442cbe9d175547d184a2253',
-    //   realm: '1238234_SB1',
-    //   url: endpoiont,
-    //   method: 'POST',
-    // };
 
     const authHeader = getAuthorizationHeader(options);
 
@@ -520,7 +513,11 @@ function getUpdateQuery(item, invoiceId, isSuccess = true) {
  * @param {*} query
  * @returns
  */
-async function updateInvoiceId(connections, query, errSub = "Invoice is created But failed to update internal_id ") {
+async function updateInvoiceId(
+  connections,
+  query,
+  errSub = "Invoice is created But failed to update internal_id "
+) {
   for (let index = 0; index < query.length; index++) {
     const element = query[index];
     console.log("element", element);
@@ -595,22 +592,25 @@ async function cancellationProcess() {
   try {
     let cancelledData = [];
     try {
-      const query = `select distinct ae.invoice_nbr,ae.internal_id, ae.system_id, aes.status, ae.source_system from ${apDbName} ae join ${apDbNamePrev}interface_ap_epay_status aes
+      const query = `select distinct ae.invoice_nbr,ae.internal_id, ae.system_id, aes.status, ae.source_system from
+      (select distinct invoice_nbr,internal_id,system_id,status,source_system,processed from ${apDbName} where processed='P'
+      union select distinct invoice_nbr,internal_id,system_id,status,source_system,processed from ${apDbNamePrev}interface_ap_epay_his) ae
+      join ${apDbNamePrev}interface_ap_epay_status aes
       on ae.invoice_nbr=aes.invoice_nbr and ae.system_id=aes.system_id
       where ae.internal_id is not null and ae.processed ='P' and ((aes.processed is null) or (aes.processed = 'F' and aes.processed_date < '${today}')) and
       aes.status ='CANCELLED' limit ${totalCountPerLoop + 1}`;
       cancelledData = await fetchCancelAndBillPaymentData(query);
-      currentCount = cancelledData.length
+      currentCount = cancelledData.length;
     } catch (error) {
       if (error == "No data found.") {
         return "billPayment";
       } else {
-        throw error
+        throw error;
       }
     }
 
     const perLoop = 15;
-    let queryData = []
+    let queryData = [];
     for (let index = 0; index < (cancelledData.length + 1) / perLoop; index++) {
       let newArray = cancelledData.slice(
         index * perLoop,
@@ -627,14 +627,17 @@ async function cancellationProcess() {
     /**
      * Updating total 21 invoices at once
      */
-    await updateInvoiceId(connections, queryData, "cancellation is successfully posted But failed to update internal_id ");
+    await updateInvoiceId(
+      connections,
+      queryData,
+      "cancellation is successfully posted But failed to update internal_id "
+    );
 
     if (currentCount < totalCountPerLoop) {
       return "billPayment";
     }
 
-    return "cancellation"
-
+    return "cancellation";
   } catch (error) {
     console.error("cancellation Process: ", error);
     await sendDevNotification(
@@ -659,7 +662,7 @@ async function fetchCancelAndBillPaymentData(query) {
     }
     return result;
   } catch (error) {
-    console.error("Error while fetching data: ", error)
+    console.error("Error while fetching data: ", error);
     throw error;
   }
 }
@@ -690,7 +693,9 @@ async function mainCancelProcess(item) {
   };
   try {
     const id = await createInvoice(jsonPayload, { invoice_type: "IN" }, true);
-    console.info(`id = ${id} received after posting cancellation data to NS for internalid = ${item.internal_id}`)
+    console.info(
+      `id = ${id} received after posting cancellation data to NS for internalid = ${item.internal_id}`
+    );
     return await getCancelAndBillPaymentUpdateQuery(item, id);
   } catch (error) {
     console.error(
@@ -699,12 +704,7 @@ async function mainCancelProcess(item) {
     );
     if (error.hasOwnProperty("customError")) {
       try {
-        await createAPFailedRecords(
-          connections,
-          item,
-          error,
-          apDbNamePrev
-        );
+        await createAPFailedRecords(connections, item, error, apDbNamePrev);
         await sendDevNotification(
           source_system,
           "AP",
@@ -724,12 +724,7 @@ async function mainCancelProcess(item) {
         );
       }
     } else {
-      await createAPFailedRecords(
-        connections,
-        item,
-        error,
-        apDbNamePrev
-      );
+      await createAPFailedRecords(connections, item, error, apDbNamePrev);
       await sendDevNotification(
         source_system,
         "AP",
@@ -747,22 +742,25 @@ async function billPaymentProcess() {
   try {
     let billPaymentData = [];
     try {
-      const query = `select ae.vendor_internal_id, ae.invoice_nbr,ae.internal_id,sum(ae.rate)-ae.discount, ae.system_id, aes.status, ae.source_system from ${apDbName} ae join ${apDbNamePrev}interface_ap_epay_status aes
-      on ae.invoice_nbr=aes.invoice_nbr
-      where ae.internal_id is not null and ae.processed ='P' and ((aes.processed is null) or (aes.processed = 'F' and aes.processed_date < '${today}')) and aes.status ='COMPLETED' 
-      group by ae.vendor_internal_id, ae.invoice_nbr,ae.internal_id, ae.system_id LIMIT ${totalCountPerLoop + 1}`;
+      const query = `select ae.vendor_internal_id, ae.invoice_nbr,ae.internal_id,sum(ae.rate)-COALESCE (ae.discount,0) as rate,ae.system_id, aes.status, ae.source_system
+      from (select distinct invoice_nbr,internal_id,system_id,status,source_system,processed,vendor_internal_id,rate,discount from ${apDbName} where processed='P'
+        union select distinct invoice_nbr,internal_id,system_id,status,source_system,processed,vendor_internal_id,rate,discount from ${apDbNamePrev}interface_ap_epay_his) ae
+      join ${apDbNamePrev}interface_ap_epay_status aes on ae.invoice_nbr=aes.invoice_nbr
+        where ae.internal_id is not null and ae.processed ='P'
+        and ((aes.processed is null) or (aes.processed = 'F' and aes.processed_date < '${today}')) and aes.status ='COMPLETED'
+        group by ae.vendor_internal_id, ae.invoice_nbr,ae.internal_id, ae.system_id LIMIT ${totalCountPerLoop + 1}`;
       billPaymentData = await fetchCancelAndBillPaymentData(query);
-      currentCount = billPaymentData.length
+      currentCount = billPaymentData.length;
     } catch (error) {
       if (error == "No data found.") {
         return "false";
       } else {
-        throw error
+        throw error;
       }
     }
 
     const perLoop = 15;
-    let queryData = []
+    let queryData = [];
     for (
       let index = 0;
       index < (billPaymentData.length + 1) / perLoop;
@@ -783,13 +781,17 @@ async function billPaymentProcess() {
     /**
      * Updating total 21 invoices at once
      */
-    await updateInvoiceId(connections, queryData, "bill payment is successfully posted But failed to update internal_id ");
+    await updateInvoiceId(
+      connections,
+      queryData,
+      "bill payment is successfully posted But failed to update internal_id "
+    );
 
     if (currentCount < totalCountPerLoop) {
       return "false";
     }
 
-    return "true"
+    return "true";
   } catch (error) {
     console.error("cancellation Process: ", error);
     await sendDevNotification(
@@ -799,7 +801,7 @@ async function billPaymentProcess() {
       "Erred out in bill payment process ",
       error
     );
-    return "false"
+    return "false";
   }
 }
 
@@ -808,6 +810,7 @@ async function mainBillPaymentProcess(item) {
   let jsonPayload = {
     custbody_mfc_omni_unique_key: `${item.vendor_internal_id}-3490-${item.internal_id}`,
     entity: item.vendor_internal_id,
+    subsidiary: 65,
     account: 3490,
     department: hardcode.department.head,
     class: hardcode.class.head,
@@ -831,12 +834,7 @@ async function mainBillPaymentProcess(item) {
     );
     if (error.hasOwnProperty("customError")) {
       try {
-        await createAPFailedRecords(
-          connections,
-          item,
-          error,
-          apDbNamePrev
-        );
+        await createAPFailedRecords(connections, item, error, apDbNamePrev);
         await sendDevNotification(
           source_system,
           "AP",
@@ -856,12 +854,7 @@ async function mainBillPaymentProcess(item) {
         );
       }
     } else {
-      await createAPFailedRecords(
-        connections,
-        item,
-        error,
-        apDbNamePrev
-      );
+      await createAPFailedRecords(connections, item, error, apDbNamePrev);
       await sendDevNotification(
         source_system,
         "AP",
@@ -876,7 +869,7 @@ async function mainBillPaymentProcess(item) {
 
 async function sendBillpaymentData(payload) {
   try {
-    const endpoiont = process.env.NS_BILL_PAYMENT_URL
+    const endpoiont = process.env.NS_BILL_PAYMENT_URL;
     const options = {
       consumer_key: userConfig.token.consumer_key,
       consumer_secret_key: userConfig.token.consumer_secret,
@@ -886,15 +879,6 @@ async function sendBillpaymentData(payload) {
       url: endpoiont,
       method: "POST",
     };
-    // const options = {
-    //   consumer_key: 'ece3501945c67f84d09c1ce50e6fffe806d4dc553ea9894b586dc6abdb230809',
-    //   consumer_secret_key: '56bafee4f285a742d208c122cea5e0da328fd7e2810091c048ac350c1ae875c7',
-    //   token: '962bbe698cdaebb4e066daf2a71de998ab7971102a5b4f1a4e86998a9e885d42',
-    //   token_secret: '32d1cf73c4044bdc9ffce26d65f4a6d4e087e2041442cbe9d175547d184a2253',
-    //   realm: '1238234_SB1',
-    //   url: endpoiont,
-    //   method: 'POST',
-    // };
 
     const authHeader = getAuthorizationHeader(options);
 
@@ -938,4 +922,3 @@ async function sendBillpaymentData(payload) {
     }
   }
 }
-

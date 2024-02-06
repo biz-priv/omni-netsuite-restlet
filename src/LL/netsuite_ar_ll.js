@@ -15,7 +15,6 @@ let userConfig = "";
 let connections = "";
 
 const arDbNamePrev = process.env.DATABASE_NAME;
-// const arDbName = "dw_dev.interface_ar";
 const arDbName = arDbNamePrev + "interface_ar";
 const source_system = "LL";
 let totalCountPerLoop = 20;
@@ -245,10 +244,10 @@ async function makeJsonPayload(data) {
             refName: e.controlling_stn ?? "",
           },
           custcol1: e.ready_date ? e.ready_date.toISOString() : "",
-          custcol_actual_weight: e.actual_weight ?? "",
-          custcol_destination_on_zip: e.dest_zip ?? "",
-          custcol_destination_on_state: e.dest_state ?? "",
-          custcol_destination_on_country: e.dest_country ?? "",
+          custcol_actual_weight: e.actual_weight ?? "",//dev: custcol20  prod: custcol_actual_weight
+          custcol_destination_on_zip: e.dest_zip ?? "",//dev: custcol19 prod: custcol_destination_on_zip
+          custcol_destination_on_state: e.dest_state ?? "",//dev: custcol18 prod: custcol_destination_on_state
+          custcol_destination_on_country: e.dest_country ?? "",//dev: custcol17 prod: custcol_destination_on_country
           custcol_miles_distance: e.miles ?? "",
           custcol_chargeable_weight: e.chargeable_weight ?? "",
         };
