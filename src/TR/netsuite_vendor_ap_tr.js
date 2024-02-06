@@ -76,7 +76,7 @@ module.exports.handler = async (event, context, callback) => {
             );
           }
         } catch (error) {
-          console.error("err", error);
+          console.error("Main lambda", error);
           await sendDevNotification(
             source_system,
             "AP",
@@ -94,6 +94,7 @@ module.exports.handler = async (event, context, callback) => {
       hasMoreData = "false";
     }
   } catch (error) {
+    console.error("Main lambda", error);
     hasMoreData = "false";
   }
 
@@ -137,6 +138,7 @@ async function getDataByVendorId(connections, vendor_id) {
     }
     return result[0];
   } catch (error) {
+    console.error("getDataByVendorId: ", error);
     throw "getDataByVendorId: No data found.";
   }
 }
@@ -279,7 +281,9 @@ async function updateFailedRecords(connections, vendor_id) {
                   WHERE vendor_id = '${vendor_id}' and source_system = '${source_system}' and vendor_internal_id is null`;
     const result = await connections.query(query);
     return result;
-  } catch (error) { }
+  } catch (error) { 
+    console.error("updateFailedRecords: ", error);
+   }
 }
 
 function getCustomDate() {
