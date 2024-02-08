@@ -18,6 +18,7 @@ function:
     NETSUIT_AR_ERROR_EMAIL_HOST: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/host}
     NETSUIT_AR_ERROR_EMAIL_FROM: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/from}
     NETSUIT_INTERCOMPANY_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/intercompany/errorEmail/to}
+    NETSUIT_UNPICKED_REPORT_ERROR_EMAIL_TO: ${ssm:/omni-netsuite-restlet/${self:provider.stage}/unpicked-report/email-list}
   package:
     include:
       - src/daily_unpicked_report.js
