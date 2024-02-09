@@ -222,7 +222,7 @@ async function makeJsonPayload(data) {
       custbody9: singleItem.housebill_nbr ?? "",
       custbody17: singleItem.email ?? "",
       custbody25: singleItem.zip_code ?? "",
-      custbody29: singleItem.rfiemail ?? "",//dev :custbody29 prod: custbody27
+      custbody27: singleItem.rfiemail ?? "",//dev :custbody29 prod: custbody27
       item: data.map((e) => {
         return {
           item: e.charge_cd_internal_id ?? "",
