@@ -202,6 +202,7 @@ async function makeJsonPayload(data) {
      * head level details
      */
     const payload = {
+      custbodytmsdebtorcreditorid: singleItem.bill_to_nbr ?? "",
       custbody_mfc_omni_unique_key:
         singleItem.invoice_nbr +
         "-" +
@@ -230,6 +231,7 @@ async function makeJsonPayload(data) {
       custbody17: singleItem.email ?? "",//1744
       custbody25: singleItem.zip_code ?? "",//2698
       custbody19: singleItem.unique_ref_nbr ?? "",//1734
+      custbody29: singleItem.rfiemail ?? "",//dev :custbody29 prod: custbody27
       item: data.map((e) => {
         return {
           item: e.charge_cd_internal_id ?? "",
