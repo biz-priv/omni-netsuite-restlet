@@ -385,6 +385,7 @@ async function makeJsonPayload(data) {
      * head level details
      */
     const payload = {
+      custbodytmsdebtorcreditorid: singleItem.bill_to_nbr ?? "",
       custbody_mfc_omni_unique_key:
         singleItem.invoice_nbr +
         "-" +
@@ -410,8 +411,7 @@ async function makeJsonPayload(data) {
       custbody_service_level: singleItem?.service_level ?? "",
       item: data.map((e) => {
         return {
-          // custcol_mfc_line_unique_key:"",
-          taxcode: e.tax_code_internal_id ?? "",
+          ...(e.tax_code_internal_id ?? "" !== "" ? { taxcode: e.tax_code_internal_id } : {}),
           item: e.charge_cd_internal_id ?? "",
           description: e.charge_cd_desc ?? "",
           amount: +parseFloat(e.total).toFixed(2) ?? "",
@@ -566,8 +566,7 @@ async function makeLineItemsJsonPayload(invoiceId, data) {
       id: invoiceId,
       item: data.map((e) => {
         return {
-          // custcol_mfc_line_unique_key:"",
-          taxcode: e.tax_code_internal_id ?? "",
+          ...(e.tax_code_internal_id ?? "" !== "" ? { taxcode: e.tax_code_internal_id } : {}),
           item: e.charge_cd_internal_id ?? "",
           description: e.charge_cd_desc ?? "",
           amount: +parseFloat(e.total).toFixed(2) ?? "",

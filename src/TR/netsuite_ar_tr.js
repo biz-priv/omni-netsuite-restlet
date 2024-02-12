@@ -200,6 +200,7 @@ async function makeJsonPayload(data) {
      * head level details
      */
     const payload = {
+      custbodytmsdebtorcreditorid: singleItem.bill_to_nbr ?? "",
       custbody_mfc_omni_unique_key:
         singleItem.invoice_nbr +
         "-" +
@@ -207,7 +208,7 @@ async function makeJsonPayload(data) {
         "-" +
         singleItem.invoice_type +
         "-" +
-        singleItem.gc_code, //invoice_nbr,customer_id, invoice_type,gc_code, //invoice_nbr, invoice_type
+        singleItem.gc_code, //invoice_nbr, customer_id, invoice_type, gc_code
       tranid: singleItem.invoice_nbr ?? "",
       trandate: singleItem.invoice_date
         ? dateFormat(singleItem.invoice_date)
@@ -227,11 +228,11 @@ async function makeJsonPayload(data) {
       custbody17: singleItem.email ?? "",//1744
       custbody25: singleItem.zip_code ?? "",//2698
       memo: singleItem.housebill_nbr ?? "",
+      custbody29: singleItem.rfiemail ?? "",//dev :custbody29 prod: custbody27
       item: data.map((e) => {
         return {
-          // custcol_mfc_line_unique_key:"",
           item: e.charge_cd_internal_id ?? "",
-          taxcode: e?.tax_code_internal_id ?? "",
+          ...(e.tax_code_internal_id ?? "" !== "" ? { taxcode: e.tax_code_internal_id } : {}),
           description: e?.charge_cd_desc ?? "",
           amount: +parseFloat(e.total).toFixed(2) ?? "",
           rate: +parseFloat(e.rate).toFixed(2) ?? "",
@@ -387,7 +388,8 @@ function getUpdateQuery(item, invoiceId, isSuccess = true) {
     }
     query += `processed_date = '${today}' 
               WHERE source_system = '${source_system}' and invoice_nbr = '${item.invoice_nbr}' 
-              and invoice_type = '${item.invoice_type}';`;
+              and invoice_type = '${item.invoice_type}' and customer_id = '${item.customer_id}' 
+              and gc_code = '${item.gc_code}';`;
     console.info("query", query);
     return query;
   } catch (error) {

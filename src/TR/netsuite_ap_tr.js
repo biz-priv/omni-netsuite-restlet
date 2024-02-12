@@ -392,6 +392,7 @@ async function makeJsonPayload(data) {
      * head level details
      */
     const payload = {
+      custbodytmsdebtorcreditorid: singleItem.bill_to_nbr ?? "",
       custbody_mfc_omni_unique_key:
         singleItem.invoice_nbr +
         "-" +
@@ -421,8 +422,7 @@ async function makeJsonPayload(data) {
 
       item: data.map((e) => {
         return {
-          // custcol_mfc_line_unique_key:"",
-          taxcode: e.tax_code_internal_id ?? "",
+          ...(e.tax_code_internal_id ?? "" !== "" ? { taxcode: e.tax_code_internal_id } : {}),
           item: e.charge_cd_internal_id ?? "",
           description: e.charge_cd_desc ?? "",
           amount: +parseFloat(e.total).toFixed(2) ?? "",
@@ -712,7 +712,8 @@ function getUpdateQuery(item, invoiceId, isSuccess = true) {
                 WHERE source_system = '${source_system}' and 
                       invoice_nbr = '${item.invoice_nbr}' and 
                       invoice_type = '${item.invoice_type}'and 
-                      vendor_id = '${item.vendor_id}'`;
+                      vendor_id = '${item.vendor_id}' and 
+                      gc_code = '${item.gc_code}';`;
 
     return query;
   } catch (error) {

@@ -17,10 +17,10 @@ const userConfig = {
   token: {
     consumer_key: process.env.NETSUIT_AR_CONSUMER_KEY,
     consumer_secret: process.env.NETSUIT_AR_CONSUMER_SECRET,
-    token_key: process.env.NETSUIT_TR_TOKEN_KEY,
-    token_secret: process.env.NETSUIT_TR_TOKEN_SECRET,
+    token_key: process.env.NETSUIT_AR_TOKEN_KEY,
+    token_secret: process.env.NETSUIT_AR_TOKEN_SECRET,
   },
-};
+  };
 const today = getCustomDate();
 const totalCountPerLoop = 5;
 const source_system = "TR";

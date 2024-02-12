@@ -196,6 +196,7 @@ async function makeJsonPayload(data) {
      * head level details
      */
     const payload = {
+      custbodytmsdebtorcreditorid: singleItem.bill_to_nbr ?? "",
       custbody_mfc_omni_unique_key:
         singleItem.invoice_nbr +
         "-" +
@@ -222,10 +223,10 @@ async function makeJsonPayload(data) {
       custbody9: singleItem.housebill_nbr ?? "",
       custbody17: singleItem.email ?? "",
       custbody25: singleItem.zip_code ?? "",
-      custbody29: singleItem.rfiemail ?? "",//dev :custbody29
+      custbody29: singleItem.rfiemail ?? "",//dev :custbody29 prod: custbody27
       item: data.map((e) => {
         return {
-          // custcol_mfc_line_unique_key:"",
+          ...(e.tax_code_internal_id ?? "" !== "" ? { taxcode: e.tax_code_internal_id } : {}),
           item: e.charge_cd_internal_id ?? "",
           description: e?.charge_cd_desc ?? "",
           amount: +parseFloat(e.total).toFixed(2) ?? "",
@@ -379,7 +380,7 @@ function getUpdateQuery(item, invoiceId, isSuccess = true) {
     }
     query += `processed_date = '${today}' 
               WHERE source_system = '${source_system}' and invoice_nbr = '${item.invoice_nbr}' 
-              and invoice_type = '${item.invoice_type}';`;
+              and invoice_type = '${item.invoice_type}' and subsidiary = '${item.subsidiary}';`;
     console.log("query", query);
     return query;
   } catch (error) {
