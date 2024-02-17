@@ -8,17 +8,15 @@ const {
   createAPFailedRecords,
   triggerReportLambda,
   sendDevNotification,
-  setDelay,
 } = require("../../Helpers/helper");
 const { getBusinessSegment } = require("../../Helpers/businessSegmentHelper");
-const { get } = require("lodash");
 
 let userConfig = "";
 let connections = "";
 
 const apDbNamePrev = process.env.DATABASE_NAME;
 const apDbName = apDbNamePrev + "interface_ap";
-const source_system = "CW";
+const source_system = "TR";
 
 const today = getCustomDate();
 const lineItemPerProcess = 500;
@@ -37,7 +35,7 @@ module.exports.handler = async (event, context, callback) => {
   let currentCount = 0;
   totalCountPerLoop = event.hasOwnProperty("totalCountPerLoop")
     ? event.totalCountPerLoop
-    : 21;
+    : totalCountPerLoop;
   queryOperator = event.hasOwnProperty("queryOperator")
     ? event.queryOperator
     : "<=";
@@ -124,7 +122,7 @@ module.exports.handler = async (event, context, callback) => {
           } catch (error) {
             await triggerReportLambda(
               process.env.NS_RESTLET_INVOICE_REPORT,
-              "CW_AP"
+              "TR_AP"
             );
             await startNextStep();
             return { hasMoreData: "false" };
@@ -177,7 +175,7 @@ module.exports.handler = async (event, context, callback) => {
             };
           }
         } catch (error) {
-          console.error("error", error);
+          console.info("error", error);
           return {
             hasMoreData: "true",
             queryOperator,
@@ -203,7 +201,7 @@ module.exports.handler = async (event, context, callback) => {
 
       try {
         invoiceIDs = orderData.map((a) => "'" + a.invoice_nbr + "'");
-        console.info("orderData**", orderData.length);
+        console.info("orderData**", orderData.length, orderData);
         console.info("invoiceIDs", invoiceIDs);
         if (orderData.length === 1) {
           console.info("length==1", orderData);
@@ -223,18 +221,15 @@ module.exports.handler = async (event, context, callback) => {
         };
       }
       /**
-       * 3 simultaneous process
+       * 15 simultaneous process
        */
-      const perLoop = 3;
+      const perLoop = 15;
       let queryData = [];
       for (let index = 0; index < (orderData.length + 1) / perLoop; index++) {
         let newArray = orderData.slice(
           index * perLoop,
           index * perLoop + perLoop
         );
-
-        await setDelay(1);
-        
         const data = await Promise.all(
           newArray.map(async (item) => {
             return await mainProcess(item, invoiceDataList);
@@ -255,7 +250,7 @@ module.exports.handler = async (event, context, callback) => {
     }
   } catch (error) {
     console.error("error", error);
-    await triggerReportLambda(process.env.NS_RESTLET_INVOICE_REPORT, "CW_AP");
+    await triggerReportLambda(process.env.NS_RESTLET_INVOICE_REPORT, "TR_AP");
     await startNextStep();
     return { hasMoreData: "false" };
   }
@@ -294,7 +289,7 @@ async function mainProcess(item, invoiceDataList) {
      * create invoice
      */
     const invoiceId = await createInvoice(jsonPayload, singleItem);
-    console.info("invoiceId",invoiceId);
+    console.info("invoiceId", invoiceId);
 
     if (queryOperator == ">") {
       queryInvoiceId = invoiceId.toString();
@@ -306,7 +301,7 @@ async function mainProcess(item, invoiceDataList) {
     const getQuery = getUpdateQuery(singleItem, invoiceId);
     return getQuery;
   } catch (error) {
-    console.error("mainprocess:error",error);
+    console.error("mainprocess:error", error);
     if (error.hasOwnProperty("customError")) {
       let getQuery = "";
       try {
@@ -399,13 +394,13 @@ async function makeJsonPayload(data) {
     const payload = {
       custbodytmsdebtorcreditorid: singleItem.bill_to_nbr ?? "",
       custbody_mfc_omni_unique_key:
-      singleItem.invoice_nbr +
-      "-" +
-      singleItem.vendor_id +
-      "-" +
-      singleItem.invoice_type+
-      "-"+
-      singleItem.gc_code, //invoice_nbr, vendor_id, invoice_type,gc_code
+        singleItem.invoice_nbr +
+        "-" +
+        singleItem.vendor_id +
+        "-" +
+        singleItem.invoice_type +
+        "-" +
+        singleItem.gc_code, //invoice_nbr, vendor_id, invoice_type,gc_code
       entity: singleItem.vendor_internal_id ?? "",
       subsidiary: singleItem.subsidiary ?? "",
       trandate: singleItem.invoice_date
@@ -416,13 +411,15 @@ async function makeJsonPayload(data) {
       class: hardcode.class.head,
       department: hardcode.department.head,
       location: hardcode.location.head,
+      otherRefNum: singleItem.customer_po ?? "",
       custbody9: singleItem.file_nbr ?? "",//1730
       custbody17: singleItem.email ?? "",//1744
       custbody_source_system: hardcode.source_system,//2327
-      custbodymfc_tmsinvoice: singleItem.invoice_nbr ?? "",
       custbody_omni_po_hawb: singleItem.housebill_nbr ?? "",//1748  //need to check on 1756 internal id with priyanka
       custbody_mode: singleItem?.mode_name ?? "",//2673
       custbody_service_level: singleItem?.service_level ?? "",//2674
+      memo: singleItem.housebill_nbr ?? "",
+
       item: data.map((e) => {
         return {
           ...(e.tax_code_internal_id ?? "" !== "" ? { taxcode: e.tax_code_internal_id } : {}),
@@ -448,9 +445,9 @@ async function makeJsonPayload(data) {
           custcol_riv_consol_nbr: e.consol_nbr ?? "",////prod:- 2510 dev:- 2506
           custcol_finalizedby: e.finalizedby ?? "",//2614
           custcol_actual_weight: e.actual_weight ?? "",//dev: custcol20  prod: custcol_actual_weight
-          custcol_destination_on_zip: e.dest_zip ?? "",//dev: custcol19  prod: custcol_destination_on_zip
-          custcol_destination_on_state: e.dest_state ?? "",//dev: custcol18  prod: custcol_destination_on_state
-          custcol_destination_on_country: e.dest_country ?? "",//dev: custcol17  prod: custcol_destination_on_country
+          custcol_destination_on_zip: e.dest_zip ?? "",//dev: custcol19 prod: custcol_destination_on_zip
+          custcol_destination_on_state: e.dest_state ?? "",//dev: custcol18 prod: custcol_destination_on_state
+          custcol_destination_on_country: e.dest_country ?? "",//dev: custcol17 prod: custcol_destination_on_country
           custcol_miles_distance: e.miles ?? "",
           custcol_chargeable_weight: e.chargeable_weight ?? "",
         };
@@ -466,7 +463,7 @@ async function makeJsonPayload(data) {
     await sendDevNotification(
       source_system,
       "AP",
-      "netsuite_ap_cw payload error",
+      "netsuite_ap_tr payload error",
       data[0],
       error
     );
@@ -512,9 +509,9 @@ function getAuthorizationHeader(options) {
 async function createInvoice(payload, singleItem) {
   try {
     const endpoiont =
-        singleItem.invoice_type == "IN"
-          ? process.env.NETSUIT_RESTLET_VB_URL
-          : process.env.NETSUIT_RESTLET_VC_URL;
+      singleItem.invoice_type == "IN"
+        ? process.env.NETSUIT_RESTLET_VB_URL
+        : process.env.NETSUIT_RESTLET_VC_URL;
 
     const options = {
       consumer_key: userConfig.token.consumer_key,
@@ -526,7 +523,7 @@ async function createInvoice(payload, singleItem) {
       method: 'POST',
     };
 
-    const authHeader =  getAuthorizationHeader(options);
+    const authHeader = getAuthorizationHeader(options);
 
     const configApi = {
       method: options.method,
@@ -581,7 +578,6 @@ async function makeLineItemsJsonPayload(invoiceId, data) {
       id: invoiceId,
       item: data.map((e) => {
         return {
-          // custcol_mfc_line_unique_key:"",
           taxcode: e.tax_code_internal_id ?? "",
           item: e.charge_cd_internal_id ?? "",
           description: e.charge_cd_desc ?? "",
@@ -613,7 +609,7 @@ async function makeLineItemsJsonPayload(invoiceId, data) {
     await sendDevNotification(
       source_system,
       "AP",
-      "netsuite_ap_cw payload error",
+      "netsuite_ap_tr payload error",
       data[0],
       error
     );
@@ -644,7 +640,7 @@ async function createInvoiceAndUpdateLineItems(invoiceId, data) {
       method: 'PUT',
     };
 
-    const authHeader =  getAuthorizationHeader(options);
+    const authHeader = getAuthorizationHeader(options);
 
     const payload = makeLineItemsJsonPayload(invoiceId, data);
     console.info('payload', JSON.stringify(payload));
@@ -674,7 +670,7 @@ async function createInvoiceAndUpdateLineItems(invoiceId, data) {
       };
     }
   } catch (error) {
-    console.error('error:createInvoice:main:catch', error);
+    console.log('error:createInvoice:main:catch', error);
     if (error?.response?.reason) {
       throw {
         customError: true,
@@ -716,7 +712,8 @@ function getUpdateQuery(item, invoiceId, isSuccess = true) {
                 WHERE source_system = '${source_system}' and 
                       invoice_nbr = '${item.invoice_nbr}' and 
                       invoice_type = '${item.invoice_type}'and 
-                      vendor_id = '${item.vendor_id}' and gc_code = '${item.gc_code}';`;
+                      vendor_id = '${item.vendor_id}' and 
+                      gc_code = '${item.gc_code}';`;
 
     return query;
   } catch (error) {
@@ -740,7 +737,7 @@ async function updateInvoiceId(connections, query) {
       await sendDevNotification(
         source_system,
         "AP",
-        "netsuite_ap_cw updateInvoiceId",
+        "netsuite_ap_tr updateInvoiceId",
         "Invoice is created But failed to update internal_id " + element,
         error
       );
@@ -797,9 +794,6 @@ function getCustomDate() {
   let da = new Intl.DateTimeFormat("en", { day: "2-digit" }).format(date);
   return `${ye}-${mo}-${da}`;
 }
-
-
-
 
 
 async function startNextStep() {
