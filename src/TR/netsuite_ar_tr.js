@@ -8,17 +8,15 @@ const {
   createARFailedRecords,
   triggerReportLambda,
   sendDevNotification,
-  setDelay,
 } = require("../../Helpers/helper");
 const { getBusinessSegment } = require("../../Helpers/businessSegmentHelper");
-const { get } = require("lodash");
 
 let userConfig = "";
 let connections = "";
 
 const arDbNamePrev = process.env.DATABASE_NAME;
 const arDbName = arDbNamePrev + "interface_ar";
-const source_system = "CW";
+const source_system = "TR";
 let totalCountPerLoop = 20;
 const today = getCustomDate();
 
@@ -50,16 +48,15 @@ module.exports.handler = async (event, context, callback) => {
     console.info("invoiceDataList", invoiceDataList.length);
 
     /**
-     * 3 simultaneous process
+     * 5 simultaneous process
      */
-    const perLoop = 3;
+    const perLoop = 15;
     let queryData = [];
     for (let index = 0; index < (orderData.length + 1) / perLoop; index++) {
       let newArray = orderData.slice(
         index * perLoop,
         index * perLoop + perLoop
       );
-      await setDelay(1);
 
       const data = await Promise.all(
         newArray.map(async (item) => {
@@ -75,13 +72,13 @@ module.exports.handler = async (event, context, callback) => {
     if (currentCount > totalCountPerLoop) {
       hasMoreData = "true";
     } else {
-      await triggerReportLambda(process.env.NS_RESTLET_INVOICE_REPORT, "CW_AR");
+      await triggerReportLambda(process.env.NS_RESTLET_INVOICE_REPORT, "TR_AR");
       await startNextStep();
       hasMoreData = "false";
     }
     return { hasMoreData };
   } catch (error) {
-    await triggerReportLambda(process.env.NS_RESTLET_INVOICE_REPORT, "CW_AR");
+    await triggerReportLambda(process.env.NS_RESTLET_INVOICE_REPORT, "TR_AR");
     await startNextStep();
     return { hasMoreData: "false" };
   }
@@ -198,7 +195,7 @@ async function makeJsonPayload(data) {
     const hardcode = getHardcodeData(
       singleItem.intercompany == "Y" ? true : false
     );
-    
+
     /**
      * head level details
      */
@@ -211,7 +208,7 @@ async function makeJsonPayload(data) {
         "-" +
         singleItem.invoice_type +
         "-" +
-        singleItem.gc_code, //invoice_nbr,customer_id, invoice_type,gc_code, //invoice_nbr, invoice_type
+        singleItem.gc_code, //invoice_nbr, customer_id, invoice_type, gc_code
       tranid: singleItem.invoice_nbr ?? "",
       trandate: singleItem.invoice_date
         ? dateFormat(singleItem.invoice_date)
@@ -220,18 +217,17 @@ async function makeJsonPayload(data) {
       class: hardcode.class.head,
       location: hardcode.location.head,
       custbody_source_system: hardcode.source_system,//2327
-      custbodymfc_tmsinvoice: singleItem.invoice_nbr ?? "",
       entity: singleItem.customer_internal_id ?? "",
       subsidiary: singleItem.subsidiary ?? "",
       currency: singleItem.currency_internal_id ?? "",
-      otherrefnum: singleItem.order_ref ?? "",
+      otherrefnum: singleItem.order_ref ?? "",//1730
       custbody_mode: singleItem?.mode_name ?? "",//2673
       custbody_service_level: singleItem?.service_level ?? "",//2674
       custbody18: singleItem.finalized_date ?? "",//1745
-      custbody9: singleItem.file_nbr ?? "",//1730 //here in soap we are passing file_nbr
+      custbody9: singleItem.housebill_nbr ?? "",//1730 //here in soap we are passing file_nbr
       custbody17: singleItem.email ?? "",//1744
       custbody25: singleItem.zip_code ?? "",//2698
-      custbody19: singleItem.unique_ref_nbr ?? "",//1734
+      memo: singleItem.housebill_nbr ?? "",
       custbody27: singleItem.rfiemail ?? "",//dev :custbody29 prod: custbody27
       item: data.map((e) => {
         return {
@@ -272,7 +268,7 @@ async function makeJsonPayload(data) {
     await sendDevNotification(
       source_system,
       "AR",
-      "netsuite_ar_cw payload error",
+      "netsuite_ar_tr payload error",
       data[0],
       error
     );
@@ -332,7 +328,7 @@ async function createInvoice(payload, singleItem) {
       method: 'POST',
     };
 
-    const authHeader =  getAuthorizationHeader(options);
+    const authHeader = getAuthorizationHeader(options);
 
     const configApi = {
       method: options.method,
@@ -348,7 +344,7 @@ async function createInvoice(payload, singleItem) {
 
     const response = await axios.request(configApi);
     console.info("response", response.status);
-  
+
     if (response.status === 200 && response.data.status === 'Success') {
       return response.data.id;
     } else {
@@ -392,7 +388,7 @@ function getUpdateQuery(item, invoiceId, isSuccess = true) {
     }
     query += `processed_date = '${today}' 
               WHERE source_system = '${source_system}' and invoice_nbr = '${item.invoice_nbr}' 
-              and invoice_type = '${item.invoice_type}'and customer_id = '${item.customer_id}' 
+              and invoice_type = '${item.invoice_type}' and customer_id = '${item.customer_id}' 
               and gc_code = '${item.gc_code}';`;
     console.info("query", query);
     return query;
@@ -412,7 +408,7 @@ async function updateInvoiceId(connections, query) {
       await sendDevNotification(
         source_system,
         "AR",
-        "netsuite_ar_cw updateInvoiceId",
+        "netsuite_ar_tr updateInvoiceId",
         "Invoice is created But failed to update internal_id " + element,
         error
       );
