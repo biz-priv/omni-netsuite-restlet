@@ -213,6 +213,7 @@ async function makeJsonPayload(data) {
       class: hardcode.class.head,
       location: hardcode.location.head,
       custbody_source_system: hardcode.source_system,
+      custbodymfc_tmsinvoice: singleItem.invoice_nbr ?? "",
       entity: singleItem.customer_internal_id ?? "",
       subsidiary: singleItem.subsidiary ?? "",
       currency: singleItem.currency_internal_id ?? "",
@@ -223,6 +224,7 @@ async function makeJsonPayload(data) {
       custbody9: singleItem.housebill_nbr ?? "",
       custbody17: singleItem.email ?? "",
       custbody25: singleItem.zip_code ?? "",
+      memo: singleItem.housebill_nbr ?? "",
       custbody27: singleItem.rfiemail ?? "",//dev :custbody29 prod: custbody27
       item: data.map((e) => {
         return {

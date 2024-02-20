@@ -411,6 +411,7 @@ async function makeJsonPayload(data) {
       class: hardcode.class.head,
       department: hardcode.department.head,
       location: hardcode.location.head,
+      custbodymfc_tmsinvoice: singleItem.invoice_nbr ?? "",
       otherRefNum: singleItem.customer_po ?? "",
       custbody9: singleItem.file_nbr ?? "",//1730
       custbody17: singleItem.email ?? "",//1744
