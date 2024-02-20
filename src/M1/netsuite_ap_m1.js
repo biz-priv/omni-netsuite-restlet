@@ -400,6 +400,7 @@ async function makeJsonPayload(data) {
       tranid: singleItem.invoice_nbr ?? "",
       currency: singleItem.currency_internal_id ?? "",
       otherrefnum: singleItem.customer_po ?? "",
+      custbodymfc_tmsinvoice: singleItem.invoice_nbr ?? "",
       class: hardcode.class.head,
       department: hardcode.department.head,
       location: hardcode.location.head,
