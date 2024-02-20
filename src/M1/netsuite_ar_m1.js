@@ -221,9 +221,10 @@ async function makeJsonPayload(data) {
       custbody_mode: singleItem?.mode_name ?? "",
       custbody_service_level: singleItem?.service_level ?? "",
       custbody18: singleItem.finalized_date ?? "",
-      custbody9: singleItem.housebill_nbr ?? "",
+      custbody9: singleItem.file_nbr ?? "",
       custbody17: singleItem.email ?? "",
       custbody25: singleItem.zip_code ?? "",
+      custbodyee_invno: singleItem.ee_invoice ?? "",
       memo: singleItem.housebill_nbr ?? "",
       custbody27: singleItem.rfiemail ?? "",//dev :custbody29 prod: custbody27
       item: data.map((e) => {
