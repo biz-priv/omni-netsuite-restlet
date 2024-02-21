@@ -415,12 +415,11 @@ async function makeJsonPayload(data) {
       otherRefNum: singleItem.customer_po ?? "",
       custbody9: singleItem.file_nbr ?? "",//1730
       custbody17: singleItem.email ?? "",//1744
+      custbody19: singleItem.internal_ref_nbr ?? "",
       custbody_source_system: hardcode.source_system,//2327
       custbody_omni_po_hawb: singleItem.housebill_nbr ?? "",//1748  //need to check on 1756 internal id with priyanka
       custbody_mode: singleItem?.mode_name ?? "",//2673
       custbody_service_level: singleItem?.service_level ?? "",//2674
-      memo: singleItem.housebill_nbr ?? "",
-
       item: data.map((e) => {
         return {
           ...(e.tax_code_internal_id ?? "" !== "" ? { taxcode: e.tax_code_internal_id } : {}),

@@ -225,9 +225,10 @@ async function makeJsonPayload(data) {
       custbody_mode: singleItem?.mode_name ?? "",//2673
       custbody_service_level: singleItem?.service_level ?? "",//2674
       custbody18: singleItem.finalized_date ?? "",//1745
-      custbody9: singleItem.housebill_nbr ?? "",//1730 //here in soap we are passing file_nbr
+      custbody9: singleItem.file_nbr ?? "",//1730 
       custbody17: singleItem.email ?? "",//1744
       custbody25: singleItem.zip_code ?? "",//2698
+      custbodyee_invno: singleItem.ee_invoice ?? "",
       memo: singleItem.housebill_nbr ?? "",
       custbody27: singleItem.rfiemail ?? "",//dev :custbody29 prod: custbody27
       item: data.map((e) => {
