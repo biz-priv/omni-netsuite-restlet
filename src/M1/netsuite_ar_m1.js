@@ -265,7 +265,7 @@ async function makeJsonPayload(data) {
     await sendDevNotification(
       source_system,
       "AR",
-      "netsuite_ar_wt payload error",
+      "netsuite_ar_m1 payload error",
       data[0],
       error
     );
