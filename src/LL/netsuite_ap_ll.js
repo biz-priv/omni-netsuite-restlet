@@ -743,9 +743,9 @@ async function billPaymentProcess() {
   try {
     let billPaymentData = [];
     try {
-      const query = `select ae.vendor_internal_id, ae.invoice_nbr,ae.internal_id,sum(ae.rate)-COALESCE (ae.discount,0) as rate,ae.system_id, aes.status, ae.source_system
-      from (select distinct invoice_nbr,internal_id,system_id,status,source_system,processed,vendor_internal_id,rate,discount from ${apDbName} where processed='P'
-        union select distinct invoice_nbr,internal_id,system_id,status,source_system,processed,vendor_internal_id,rate,discount from ${apDbNamePrev}interface_ap_epay_his) ae
+      const query = `select ae.vendor_id, ae.vendor_internal_id, ae.invoice_nbr,ae.internal_id,sum(ae.rate)-COALESCE (ae.discount,0) as rate,ae.system_id, aes.status, ae.source_system
+      from (select distinct vendor_id,invoice_nbr,internal_id,system_id,status,source_system,processed,vendor_internal_id,rate,discount from ${apDbName} where processed='P'
+        union select distinct vendor_id,invoice_nbr,internal_id,system_id,status,source_system,processed,vendor_internal_id,rate,discount from ${apDbNamePrev}interface_ap_epay_his) ae
       join ${apDbNamePrev}interface_ap_epay_status aes on ae.invoice_nbr=aes.invoice_nbr
         where ae.internal_id is not null and ae.processed ='P'
         and ((aes.processed is null) or (aes.processed = 'F' and aes.processed_date < '${today}')) and aes.status ='COMPLETED'
@@ -821,6 +821,11 @@ async function mainBillPaymentProcess(item) {
       },
     ],
   };
+  if(['MILLFLNC','TRINMEWI','TRINHOTX','TRINLENC','TRINMIFL'].includes(item.vendor_id)){
+    jsonPayload.apacct = 296
+  }else{
+    jsonPayload.apacct = 295
+  }
   try {
     const id = await sendBillpaymentData(jsonPayload);
     return await getCancelAndBillPaymentUpdateQuery(item, id);
