@@ -73,13 +73,13 @@ module.exports.handler = async (event, context, callback) => {
       hasMoreData = "true";
     } else {
       await triggerReportLambda(process.env.NS_RESTLET_INVOICE_REPORT, "LL_AR");
-      await startNextStep();
+      // await startNextStep();
       hasMoreData = "false";
     }
     return { hasMoreData };
   } catch (error) {
     await triggerReportLambda(process.env.NS_RESTLET_INVOICE_REPORT, "LL_AR");
-    await startNextStep();
+    // await startNextStep();
     return { hasMoreData: "false" };
   }
 };
