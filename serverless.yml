@@ -106,6 +106,12 @@ functions:
   netsuite-customer-ar-ll-restlet: ${file(config/functions/LL/netsuite-customer-ar-ll.yml):function}
   netsuite-ap-ll-restlet: ${file(config/functions/LL/netsuite-ap-ll.yml):function}
   netsuite-vendor-ap-ll-restlet: ${file(config/functions/LL/netsuite-vendor-ap-ll.yml):function}
+
+  #AGW lambda functions
+  netsuite-ar-agw-restlet: ${file(config/functions/AGW/netsuite-ar-agw.yml):function}
+  netsuite-customer-ar-agw-restlet: ${file(config/functions/AGW/netsuite-customer-ar-agw.yml):function}
+  netsuite-ap-agw-restlet: ${file(config/functions/AGW/netsuite-ap-agw.yml):function}
+  netsuite-vendor-ap-agw-restlet: ${file(config/functions/AGW/netsuite-vendor-ap-agw.yml):function}
  
   #report fn
   invoice-report: ${file(config/functions/invoice-report.yml):function}
@@ -129,9 +135,14 @@ stepFunctions:
     #LL Step Functions
     netsuite-customer-ar-ll-restlet: ${file(config/step-functions/LL/netsuite-customer-ar-ll-state-machine.yml):stateMachine}
     netsuite-vendor-ap-ll-restlet: ${file(config/step-functions/LL/netsuite-vendor-ap-ll-state-machine.yml):stateMachine}
+    #AGW Step Functions
+    netsuite-customer-ar-agw-restlet: ${file(config/step-functions/AGW/netsuite-customer-ar-agw-state-machine.yml):stateMachine}
+    netsuite-vendor-ap-agw-restlet: ${file(config/step-functions/AGW/netsuite-vendor-ap-agw-state-machine.yml):stateMachine}
     #cw intercompny 
     netsuite-cw-intercompany-restlet: ${file(config/step-functions/netsuite-intercompany-state-machine.yml):stateMachine}
     #TR intercompany 
     netsuite-tr-intercompany-restlet: ${file(config/step-functions/netsuite-intercompany-tr-state-machine.yml):stateMachine}
     #LL intercompany 
     netsuite-ll-intercompany-restlet: ${file(config/step-functions/netsuite-intercompany-ll-state-machine.yml):stateMachine}
+    #AGW intercompany 
+    netsuite-agw-intercompany-restlet: ${file(config/step-functions/netsuite-intercompany-agw-state-machine.yml):stateMachine}
