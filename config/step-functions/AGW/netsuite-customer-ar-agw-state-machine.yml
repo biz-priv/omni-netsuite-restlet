@@ -1,13 +1,13 @@
 ---
 stateMachine:
   name: netsuite-customer-ar-agw-restlet-state-machine-${self:provider.stage}
-  events:
-    - schedule:
-        rate: cron(30 15 * * ? *) # 3:30 PM UTC, CST: 9:30 AM, IST: 8:00 PM
-    - schedule:
-        rate: cron(30 18 * * ? *) # 6:30 PM UTC, CST: 12:30 PM, IST: 11:00 PM
-    - schedule:
-        rate: cron(30 21 * * ? *) # 9:30 PM UTC, CST: 3:30 PM, IST: 1:00 AM
+  # events:
+  #   - schedule:
+  #       rate: cron(30 15 * * ? *) # 3:30 PM UTC, CST: 9:30 AM, IST: 8:00 PM
+  #   - schedule:
+  #       rate: cron(30 18 * * ? *) # 6:30 PM UTC, CST: 12:30 PM, IST: 11:00 PM
+  #   - schedule:
+  #       rate: cron(30 21 * * ? *) # 9:30 PM UTC, CST: 3:30 PM, IST: 1:00 AM
   definition:
     Comment: "State machine to update netsuit customer AR AG Restlet internal details"
     StartAt: PublishEvents
