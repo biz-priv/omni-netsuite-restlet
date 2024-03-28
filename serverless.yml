@@ -131,6 +131,9 @@ stepFunctions:
     #CW Step Functions
     netsuite-customer-ar-cw-restlet: ${file(config/step-functions/CW/netsuite-customer-ar-cw-state-machine.yml):stateMachine}
     netsuite-vendor-ap-cw-restlet: ${file(config/step-functions/CW/netsuite-vendor-ap-cw-state-machine.yml):stateMachine}
+    #AGW Step Functions
+    netsuite-customer-ar-agw-restlet: ${file(config/step-functions/AGW/netsuite-customer-ar-agw-state-machine.yml):stateMachine}
+    netsuite-vendor-ap-agw-restlet: ${file(config/step-functions/AGW/netsuite-vendor-ap-agw-state-machine.yml):stateMachine}
     #TR Step Functions
     netsuite-customer-ar-tr-restlet: ${file(config/step-functions/TR/netsuite-customer-ar-tr-state-machine.yml):stateMachine}
     netsuite-vendor-ap-tr-restlet: ${file(config/step-functions/TR/netsuite-vendor-ap-tr-state-machine.yml):stateMachine}
