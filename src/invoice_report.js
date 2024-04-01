@@ -226,11 +226,11 @@ async function getReportData(
       let mainQuery = "";
       if (sourceSystem == "CW") {
         mainQuery = `select ${dbname}interface_ar.*, CONCAT('Customer not found. (customer_id: ', CAST(customer_id AS CHAR), ') Subsidiary: ', subsidiary) AS error_msg
-        from ${dbname}interface_ar where source_system = 'CW' and processed ='F' and customer_id in (${queryCuErr})
+        from ${dbname}interface_ar where source_system = ${sourceSystem} and processed ='F' and customer_id in (${queryCuErr})
         GROUP BY invoice_nbr, invoice_type, gc_code, subsidiary`;
       } else if (sourceSystem == "AG") {
         mainQuery = `select ${dbname}interface_ar.*, CONCAT('Customer not found. (customer_id: ', CAST(customer_id AS CHAR), ') Subsidiary: ', subsidiary) AS error_msg
-        from ${dbname}interface_ar where source_system = 'CW' and processed ='F' and customer_id in (${queryCuErr})
+        from ${dbname}interface_ar where source_system = ${sourceSystem} and processed ='F' and customer_id in (${queryCuErr})
         GROUP BY invoice_nbr, invoice_type, gc_code, subsidiary`;
       } else if (sourceSystem == "M1") {
         mainQuery = `select ${dbname}interface_ar.*, CONCAT('Customer not found. (customer_id: ', CAST(customer_id AS CHAR), ') Subsidiary: ', subsidiary) AS error_msg
@@ -287,39 +287,39 @@ async function getReportData(
           query=`select distinct ia.*,ial.error_msg,ial.id  from ${dbname}interface_ap ia 
           join ${dbname}interface_intercompany_api_logs ial on ia.source_system=ial.source_system and 
           ia.internal_id=ial.ap_internal_id and ia.file_nbr= ial.file_nbr
-          where ia.intercompany ='Y' and ial.source_system = 'CW' and ial.is_report_sent = 'N'`
+          where ia.intercompany ='Y' and ial.source_system = ${sourceSystem} and ial.is_report_sent = 'N'`
         } else {
           query=`
           select distinct ar.*, ial.error_msg, ial.id from ${dbname}interface_ar ar
           join ${dbname}interface_intercompany_api_logs ial on ial.source_system = ar.source_system 
           and ial.ar_internal_id  = ar.internal_id and ial.file_nbr = ar.file_nbr 
-          where ar.intercompany ='Y' and ial.source_system ='CW' and ial.is_report_sent ='N'`
+          where ar.intercompany ='Y' and ial.source_system = ${sourceSystem} and ial.is_report_sent ='N'`
         }
       }else if (sourceSystem === "AG") {
         if (intercompanyType === "AP") {
           query=`select distinct ia.*,ial.error_msg,ial.id  from ${dbname}interface_ap ia 
           join ${dbname}interface_intercompany_api_logs ial on ia.source_system=ial.source_system and 
           ia.internal_id=ial.ap_internal_id and ia.file_nbr= ial.file_nbr
-          where ia.intercompany ='Y' and ial.source_system = 'CW' and ial.is_report_sent = 'N'`
+          where ia.intercompany ='Y' and ial.source_system = ${sourceSystem} and ial.is_report_sent = 'N'`
         } else {
           query=`
           select distinct ar.*, ial.error_msg, ial.id from ${dbname}interface_ar ar
           join ${dbname}interface_intercompany_api_logs ial on ial.source_system = ar.source_system 
           and ial.ar_internal_id  = ar.internal_id and ial.file_nbr = ar.file_nbr 
-          where ar.intercompany ='Y' and ial.source_system ='CW' and ial.is_report_sent ='N'`
+          where ar.intercompany ='Y' and ial.source_system = ${sourceSystem} and ial.is_report_sent ='N'`
         }
       } else if (sourceSystem === "TR") {
         if (intercompanyType === "AP") {
           query=`select distinct ia.*,ial.error_msg,ial.id  from ${dbname}interface_ap ia 
           join ${dbname}interface_intercompany_api_logs ial on ia.source_system=ial.source_system and 
           ia.internal_id=ial.ap_internal_id and ia.file_nbr= ial.file_nbr
-          where ia.intercompany ='Y' and ial.source_system = 'TR' and ial.is_report_sent = 'N'`
+          where ia.intercompany ='Y' and ial.source_system = ${sourceSystem} and ial.is_report_sent = 'N'`
         } else {
           query=`
           select distinct ar.*, ial.error_msg, ial.id from ${dbname}interface_ar ar
           join ${dbname}interface_intercompany_api_logs ial on ial.source_system = ar.source_system 
           and ial.ar_internal_id  = ar.internal_id and ial.file_nbr = ar.file_nbr 
-          where ar.intercompany ='Y' and ial.source_system ='TR' and ial.is_report_sent ='N'`
+          where ar.intercompany ='Y' and ial.source_system = ${sourceSystem} and ial.is_report_sent ='N'`
         }
       } else if (sourceSystem === "LL") {
         if (intercompanyType === "AP") {
