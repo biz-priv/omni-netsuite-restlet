@@ -1,0 +1,18 @@
+---
+function:
+  handler: src/AGW/netsuite_ap_agw.handler
+  layers:
+    - { Ref: CommonNetsuiteLibsLambdaLayer }
+  name: ${self:service}-ap-agw-${self:provider.stage}
+  description: AGW Restlet Netsuite AP api service - ${self:provider.stage}
+  runtime: nodejs18.x
+  memorySize: 2048
+  timeout: 900
+  package:
+    include:
+      - src/AGW/netsuite_ap_agw.js
+      - Helpers/**
+  environment:
+    NETSUITE_INTERCOMPANY_STEP_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-intercompany-agw-state-machine-${self:provider.stage}
+    NETSUIT_RESTLET_VB_URL: ${ssm:/omni-dw/${self:provider.stage}/vendorbill/apiEndpoint}
+    NETSUIT_RESTLET_VC_URL: ${ssm:/omni-dw/${self:provider.stage}/vendorcredit/apiEndpoint}
