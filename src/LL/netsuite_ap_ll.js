@@ -809,14 +809,15 @@ async function billPaymentProcess() {
 async function mainBillPaymentProcess(item) {
   const hardcode = getHardcodeData();
   let jsonPayload = {
-    custbody_mfc_omni_unique_key: `${item.vendor_internal_id}-3490-${item.internal_id}`,
+    custbody_mfc_omni_unique_key: `${item.vendor_internal_id}-2793-${item.internal_id}`,
     entity: item.vendor_internal_id,
     subsidiary: 65,
-    account: 3490,
+    account: 2793,
     department: hardcode.department.head,
     class: hardcode.class.head,
     location: hardcode.location.head,
     tranid: item.system_id,
+    custbody1: "14",
     apply: [
       {
         internalid: item.internal_id,
@@ -825,6 +826,12 @@ async function mainBillPaymentProcess(item) {
       },
     ],
   };
+  if(['MILLFLNC','TRINMEWI','TRINHOTX','TRINLENC','TRINMIFL'].includes(item.vendor_id)){
+    jsonPayload.apacct = 296
+  }else{
+    jsonPayload.apacct = 295
+  }
+  jsonPayload.custbody_9997_is_for_ep_eft = false
   try {
     const id = await sendBillpaymentData(jsonPayload);
     return await getCancelAndBillPaymentUpdateQuery(item, id);
