@@ -809,10 +809,10 @@ async function billPaymentProcess() {
 async function mainBillPaymentProcess(item) {
   const hardcode = getHardcodeData();
   let jsonPayload = {
-    custbody_mfc_omni_unique_key: `${item.vendor_internal_id}-2793-${item.internal_id}`,
+    custbody_mfc_omni_unique_key: `${item.vendor_internal_id}-3490-${item.internal_id}`,
     entity: item.vendor_internal_id,
     subsidiary: 65,
-    account: 2793,
+    account: 3490,
     department: hardcode.department.head,
     class: hardcode.class.head,
     location: hardcode.location.head,
