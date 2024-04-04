@@ -813,6 +813,7 @@ async function mainBillPaymentProcess(item) {
     class: hardcode.class.head,
     location: hardcode.location.head,
     tranid: item.system_id,
+    custbody1: "14",
     apply: [
       {
         internalid: item.internal_id,
@@ -826,6 +827,7 @@ async function mainBillPaymentProcess(item) {
   }else{
     jsonPayload.apacct = 295
   }
+  jsonPayload.custbody_9997_is_for_ep_eft = false
   try {
     const id = await sendBillpaymentData(jsonPayload);
     return await getCancelAndBillPaymentUpdateQuery(item, id);
