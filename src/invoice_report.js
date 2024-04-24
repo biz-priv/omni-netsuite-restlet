@@ -12,8 +12,8 @@ const mailList = {
     AP: process.env.NETSUIT_AP_ERROR_EMAIL_TO,
   },
   AG: {
-    AR: process.env.NETSUIT_AR_ERROR_EMAIL_TO,
-    AP: process.env.NETSUIT_AP_ERROR_EMAIL_TO,
+    AR: process.env.NETSUIT_AGW_ERROR_EMAIL_TO,
+    AP: process.env.NETSUIT_AGW_ERROR_EMAIL_TO,
   },
   TR: {
     AR: process.env.NETSUIT_AR_TR_ERROR_EMAIL_TO,
