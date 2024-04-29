@@ -27,6 +27,7 @@ const mailList = {
     CW: process.env.NETSUIT_INTERCOMPANY_ERROR_EMAIL_TO,
     TR: process.env.NETSUIT_INTERCOMPANY_ERROR_EMAIL_TO,
     WTLL: process.env.NETSUIT_INTERCOMPANY_ERROR_EMAIL_TO,
+    AG: process.env.NETSUIT_INTERCOMPANY_ERROR_EMAIL_TO,
   },
   LL: {
     AR: process.env.NETSUIT_AR_ERROR_EMAIL_TO,

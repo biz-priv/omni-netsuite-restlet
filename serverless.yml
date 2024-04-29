@@ -118,6 +118,7 @@ functions:
   netsuite-cw-intercompany-restlet: ${file(config/functions/netsuite-intercompany.yml):function}
   netsuite-tr-intercompany-restlet: ${file(config/functions/netsuite-tr-intercompany.yml):function}
   netsuite-ll-intercompany-restlet: ${file(config/functions/netsuite-ll-intercompany.yml):function}
+  netsuite-agw-intercompany-restlet: ${file(config/functions/netsuite-agw-intercompany.yml):function}
 
   #AGW lambda functions
   netsuite-ar-agw-restlet: ${file(config/functions/AGW/netsuite-ar-agw.yml):function}
@@ -149,5 +150,5 @@ stepFunctions:
     netsuite-tr-intercompany-restlet: ${file(config/step-functions/netsuite-intercompany-tr-state-machine.yml):stateMachine}
     #LL intercompany 
     netsuite-ll-intercompany-restlet: ${file(config/step-functions/netsuite-intercompany-ll-state-machine.yml):stateMachine}
-    #AGW intercompany 
-    # netsuite-agw-intercompany-restlet: ${file(config/step-functions/netsuite-intercompany-agw-state-machine.yml):stateMachine}
+    # AGW intercompany 
+    netsuite-agw-intercompany-restlet: ${file(config/step-functions/netsuite-intercompany-agw-state-machine.yml):stateMachine}
