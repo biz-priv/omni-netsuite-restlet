@@ -421,10 +421,10 @@ async function updateInvoiceId(connections, query) {
 
 function getHardcodeData(isIntercompany = false) {
   const data = {
-    source_system: "8",
+    source_system: "7",
     class: {
       head: "9",
-      line: getBusinessSegment(process.env.STAGE),
+      line: getBusinessSegment('PROD'),
     },
     department: {
       default: { head: "15", line: "1" },
