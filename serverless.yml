@@ -64,7 +64,7 @@ provider:
     NETSUIT_AR_ERROR_EMAIL_FROM: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/from}
     NETSUIT_AR_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/to}
     NS_RESTLET_INVOICE_REPORT: ${self:service}-invoice-report-${self:provider.stage}
-    NS_BASE_URL: ${ssm:/${self:service}/${self:provider.stage}/netsuiteBaseUrl}
+    NS_BASE_URL: ${ssm:/${self:service}/${self:provider.stage}/netsuiteBaseUrlSb2}
     NS_BASE_URL_SB1: ${ssm:/${self:service}/${self:provider.stage}/netsuiteBaseUrlSb1}
     NS_BILL_PAYMENT_URL: ${ssm:/${self:service}/${self:provider.stage}/netsuiteBillPaymentUrl}
 
