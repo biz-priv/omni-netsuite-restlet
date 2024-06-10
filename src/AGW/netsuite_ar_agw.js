@@ -1,3 +1,10 @@
+/*
+* File: src\AGW\netsuite_ar_agw.js
+* Project: Omni-netsuite-restlet
+* Author: Bizcloud Experts
+* Date: 2024-04-01
+* Confidential and Proprietary
+*/
 const AWS = require("aws-sdk");
 const crypto = require("crypto");
 const OAuth = require("oauth-1.0a");
