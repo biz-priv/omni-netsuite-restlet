@@ -8,6 +8,8 @@ function:
   runtime: nodejs18.x
   memorySize: 2048
   timeout: 900
+  tags:
+    Name: customer-ar-ll  
   package:
     include:
       - src/LL/netsuite_customer_ar_ll.js
