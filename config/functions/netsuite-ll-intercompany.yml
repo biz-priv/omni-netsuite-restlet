@@ -8,6 +8,8 @@ function:
   runtime: nodejs18.x
   memorySize: 2048
   timeout: 900
+  tags:
+    Name: intercompany-ll  
   package:
     include:
       - src/netsuite_ll_intercompany.js
