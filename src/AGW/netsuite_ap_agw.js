@@ -422,6 +422,8 @@ async function makeJsonPayload(data) {
       custbody_omni_po_hawb: singleItem.housebill_nbr ?? "",//1748  //need to check on 1756 internal id with priyanka
       custbody_mode: singleItem?.mode_name ?? "",//2673
       custbody_service_level: singleItem?.service_level ?? "",//2674
+      memo: singleItem.invoice_summary ?? "",
+      ee_invoice: singleItem.internal_ref_nbr ?? "",
       item: data.map((e) => {
         return {
           ...(e.tax_code_internal_id ?? "" !== "" ? { taxcode: e.tax_code_internal_id } : {}),
@@ -761,7 +763,7 @@ function getHardcodeData(isIntercompany = false) {
       line: getBusinessSegment('PROD'),
     },
     department: {
-      default: { head: "15", line: "2" },
+      default: { head: "15", line: "7" },
       intercompany: { head: "16", line: "2" },
     },
     location: { head: "18", line: "EXT ID: Take from DB" },
