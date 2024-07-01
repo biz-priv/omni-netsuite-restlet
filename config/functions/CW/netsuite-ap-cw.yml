@@ -8,6 +8,8 @@ function:
   runtime: nodejs18.x
   memorySize: 2048
   timeout: 900
+  tags:
+    Name:  ap-cw
   package:
     include:
       - src/CW/netsuite_ap_cw.js

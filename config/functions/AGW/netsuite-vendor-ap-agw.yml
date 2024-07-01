@@ -8,6 +8,8 @@ function:
   runtime: nodejs18.x
   memorySize: 2048
   timeout: 900
+  tags:
+    Name: customer-ar-agw
   package:
     include:
       - src/AGW/netsuite_vendor_ap_agw.js
