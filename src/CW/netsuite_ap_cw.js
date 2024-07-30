@@ -126,7 +126,7 @@ module.exports.handler = async (event, context, callback) => {
               process.env.NS_RESTLET_INVOICE_REPORT,
               "CW_AP"
             );
-            await startNextStep();
+            // await startNextStep();
             return { hasMoreData: "false" };
           }
           queryInvoiceNbr = orderData[0].invoice_nbr;
@@ -256,7 +256,7 @@ module.exports.handler = async (event, context, callback) => {
   } catch (error) {
     console.error("error", error);
     await triggerReportLambda(process.env.NS_RESTLET_INVOICE_REPORT, "CW_AP");
-    await startNextStep();
+    // await startNextStep();
     return { hasMoreData: "false" };
   }
 };
@@ -344,9 +344,7 @@ async function getDataGroupBy(connections) {
     FROM ${apDbName} 
     WHERE  ((internal_id is null and processed is null and vendor_internal_id is not null) or
     (vendor_internal_id is not null and processed ='F' and processed_date ${dateCheckOperator} '${today}')) and 
-    ((intercompany='Y' and pairing_available_flag ='Y') OR 
-      intercompany='N'
-    )
+    (intercompany='Y' OR intercompany='N')
     and source_system = '${source_system}' and invoice_nbr != '' and gc_code is not null 
     GROUP BY invoice_nbr, vendor_id, invoice_type,gc_code 
     having tc ${queryOperator} ${lineItemPerProcess} 
@@ -802,28 +800,28 @@ function getCustomDate() {
 
 
 
-async function startNextStep() {
-  try {
-    const params = {
-      stateMachineArn: process.env.NETSUITE_INTERCOMPANY_STEP_ARN,
-      input: JSON.stringify({}),
-    };
-    const stepfunctions = new AWS.StepFunctions();
-    const data = await new Promise((resolve, reject) => {
-      stepfunctions.startExecution(params, (err, data) => {
-        if (err) {
-          console.error("Netsuit NETSUITE_INTERCOMPANY_STEP_ARN trigger failed");
-          reject(err);
-        } else {
-          console.info("Netsuit NETSUITE_INTERCOMPANY_STEP_ARN started");
-          resolve(data);
-        }
-      });
-    });
+// async function startNextStep() {
+//   try {
+//     const params = {
+//       stateMachineArn: process.env.NETSUITE_INTERCOMPANY_STEP_ARN,
+//       input: JSON.stringify({}),
+//     };
+//     const stepfunctions = new AWS.StepFunctions();
+//     const data = await new Promise((resolve, reject) => {
+//       stepfunctions.startExecution(params, (err, data) => {
+//         if (err) {
+//           console.error("Netsuite NETSUITE_INTERCOMPANY_STEP_ARN trigger failed");
+//           reject(err);
+//         } else {
+//           console.info("Netsuite NETSUITE_INTERCOMPANY_STEP_ARN started");
+//           resolve(data);
+//         }
+//       });
+//     });
 
-    return true;
-  } catch (error) {
-    console.error("Error in startNextStep:", error);
-    return false;
-  }
-}
+//     return true;
+//   } catch (error) {
+//     console.error("Error in startNextStep:", error);
+//     return false;
+//   }
+// }
