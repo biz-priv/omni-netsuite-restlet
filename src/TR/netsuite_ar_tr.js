@@ -154,7 +154,7 @@ async function getDataGroupBy(connections) {
     const query = `SELECT distinct invoice_nbr,customer_id,invoice_type, gc_code FROM ${arDbName}
     where source_system = '${source_system}' and customer_internal_id is not null and invoice_nbr is not null
     and ((internal_id is null and processed is null) or (processed='F' and processed_date < '${today}'))
-    and ((intercompany='Y' and pairing_available_flag ='Y') or intercompany='N')
+    and (intercompany='Y' or intercompany='N')
     order by invoice_nbr,customer_id,invoice_type, gc_code
     limit ${totalCountPerLoop + 1}`;
 
@@ -471,10 +471,10 @@ async function startNextStep() {
     const data = await new Promise((resolve, reject) => {
       stepfunctions.startExecution(params, (err, data) => {
         if (err) {
-          console.info("Netsuit NETSUITE_VENDOR_STEP_ARN trigger failed");
+          console.info("Netsuite NETSUITE_VENDOR_STEP_ARN trigger failed");
           reject(err);
         } else {
-          console.info("Netsuit NETSUITE_VENDOR_STEP_ARN started");
+          console.info("Netsuite NETSUITE_VENDOR_STEP_ARN started");
           resolve(data);
         }
       });

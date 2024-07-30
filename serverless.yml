@@ -125,6 +125,9 @@ functions:
   netsuite-ap-agw-restlet: ${file(config/functions/AGW/netsuite-ap-agw.yml):function}
   netsuite-vendor-ap-agw-restlet: ${file(config/functions/AGW/netsuite-vendor-ap-agw.yml):function}
 
+  #WT crossdock
+  netsuite-cross-dock-wt-restlet: ${file(config/functions/WT-CrossDock/netsuite-cross-dock-wt.yml):function}
+
 
 stepFunctions:
   stateMachines:
@@ -151,3 +154,5 @@ stepFunctions:
     netsuite-ll-intercompany-restlet: ${file(config/step-functions/netsuite-intercompany-ll-state-machine.yml):stateMachine}
     #AGW intercompany 
     # netsuite-agw-intercompany-restlet: ${file(config/step-functions/netsuite-intercompany-agw-state-machine.yml):stateMachine}
+    #WT crossdock 
+    netsuite-cross-dock-wt-restlet: ${file(config/step-functions/WT-CrossDock/netsuite-cross-dock-wt-state-machine.yml):stateMachine}
