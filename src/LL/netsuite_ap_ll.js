@@ -81,7 +81,7 @@ module.exports.handler = async (event, context, callback) => {
       let hasMoreData = await billPaymentProcess();
       if (hasMoreData == "false") {
         await triggerReportLambda(process.env.NS_RESTLET_INVOICE_REPORT, "LL_AP");
-        await startNextStep();
+        // await startNextStep();
       }
       return {
         hasMoreData,
@@ -157,7 +157,7 @@ module.exports.handler = async (event, context, callback) => {
   } catch (error) {
     console.error("error", error);
     await triggerReportLambda(process.env.NS_RESTLET_INVOICE_REPORT, "LL_AP");
-    await startNextStep();
+    // await startNextStep();
     return { hasMoreData: "false" };
   }
 };
@@ -937,28 +937,28 @@ async function sendBillpaymentData(payload) {
   }
 }
 
-async function startNextStep() {
-    try {
-      const params = {
-        stateMachineArn: process.env.NETSUITE_INTERCOMPANY_STEP_ARN,
-        input: JSON.stringify({}),
-      };
-      const stepfunctions = new AWS.StepFunctions();
-      const data = await new Promise((resolve, reject) => {
-        stepfunctions.startExecution(params, (err, data) => {
-          if (err) {
-            console.error("Netsuit NETSUITE_INTERCOMPANY_STEP_ARN trigger failed");
-            reject(err);
-          } else {
-            console.info("Netsuit NETSUITE_INTERCOMPANY_STEP_ARN started");
-            resolve(data);
-          }
-        });
-      });
+// async function startNextStep() {
+//     try {
+//       const params = {
+//         stateMachineArn: process.env.NETSUITE_INTERCOMPANY_STEP_ARN,
+//         input: JSON.stringify({}),
+//       };
+//       const stepfunctions = new AWS.StepFunctions();
+//       const data = await new Promise((resolve, reject) => {
+//         stepfunctions.startExecution(params, (err, data) => {
+//           if (err) {
+//             console.error("Netsuit NETSUITE_INTERCOMPANY_STEP_ARN trigger failed");
+//             reject(err);
+//           } else {
+//             console.info("Netsuit NETSUITE_INTERCOMPANY_STEP_ARN started");
+//             resolve(data);
+//           }
+//         });
+//       });
   
-      return true;
-    } catch (error) {
-      console.error("Error in startNextStep:", error);
-      return false;
-    }
-  }
+//       return true;
+//     } catch (error) {
+//       console.error("Error in startNextStep:", error);
+//       return false;
+//     }
+//   }
