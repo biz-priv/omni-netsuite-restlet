@@ -1,0 +1,17 @@
+---
+function:
+  handler: src/WT-CrossDock/netsuite-cross-dock-wt.handler
+  layers:
+    - { Ref: CommonNetsuiteLibsLambdaLayer }
+  name: netsuite-cross-dock-wt-${self:provider.stage}
+  description: Netsuite  netsuite-cross-dock-wt  api service - ${self:provider.stage}
+  runtime: nodejs18.x
+  memorySize: 2048
+  timeout: 900
+  package:
+    include:
+      - src/WT-CrossDock/netsuite-cross-dock-wt.js
+      - Helpers/**
+  environment:
+    NETSUIT_INTRACOMPANY_URL: ${ssm:/omni-dw/${self:provider.stage}/intracompany/apiEndpoint}
+    NETSUITE_CROSSDOCK_INTERCOMPANY_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:netsuite-cross-dock-wt-state-machine-${self:provider.stage}

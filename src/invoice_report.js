@@ -27,11 +27,12 @@ const mailList = {
     CW: process.env.NETSUIT_INTERCOMPANY_ERROR_EMAIL_TO,
     TR: process.env.NETSUIT_INTERCOMPANY_ERROR_EMAIL_TO,
     WTLL: process.env.NETSUIT_INTERCOMPANY_ERROR_EMAIL_TO,
+    CROSSDOCK: process.env.NETSUIT_INTERCOMPANY_ERROR_EMAIL_TO
   },
   LL: {
     AR: process.env.NETSUIT_AR_ERROR_EMAIL_TO,
     AP: process.env.NETSUIT_AP_ERROR_EMAIL_TO,
-  }
+  },
 };
 
 module.exports.handler = async (event, context, callback) => {
@@ -39,6 +40,7 @@ module.exports.handler = async (event, context, callback) => {
     reportType = "";
   try {
     console.info(event);
+    console.info(event.invPayload);
     let connections = "";
 
     const eventData = event.invPayload.split("_");
@@ -47,11 +49,17 @@ module.exports.handler = async (event, context, callback) => {
 
     connections = await getConnectionToRds(process.env);
 
-
     if (reportType === "AR") {
       await generateCsvAndMail(connections, sourceSystem, "AR");
     } else if (reportType === "AP") {
       await generateCsvAndMail(connections, sourceSystem, "AP");
+    } else if (reportType === "CROSSDOCK") {
+      await generateCsvAndMail(
+        connections,
+        sourceSystem,
+        "INTERCOMPANY",
+        "CROSSDOCK"
+      );
     } else {
       await generateCsvAndMail(connections, sourceSystem, "INTERCOMPANY", "AP");
       await generateCsvAndMail(connections, sourceSystem, "INTERCOMPANY", "AR");
@@ -74,7 +82,7 @@ async function generateCsvAndMail(
   connections,
   sourceSystem,
   type,
-  intercompanyType = null,
+  intercompanyType = null
 ) {
   try {
     const data = await getReportData(
@@ -93,9 +101,12 @@ async function generateCsvAndMail(
     /**
      * send mail
      */
-    const filename = `Netsuite-${sourceSystem}-${type}-${process.env.STAGE
-      }-report-${moment().format("DD-MM-YYYY")}.csv`;
+    const filename = `Netsuite-${sourceSystem}-${type}-${
+      process.env.STAGE
+    }-report-${moment().format("DD-MM-YYYY")}.csv`;
+    console.log("🚀 ~ filename:", filename);
     await sendMail(filename, csv, sourceSystem, type, intercompanyType);
+    console.info('Email sent successfully.');
 
     /**
      * Update rows
@@ -109,9 +120,9 @@ async function generateCsvAndMail(
     await sendDevNotification(
       "INVOICE-REPOR-" + sourceSystem,
       "type value:- " +
-      type +
-      " and intercompanyType value:-" +
-      intercompanyType,
+        type +
+        " and intercompanyType value:-" +
+        intercompanyType,
       "invoice_report generateCsvAndMail",
       {},
       error
@@ -137,12 +148,12 @@ async function getReportData(
     let query = "";
     if (type === "AP") {
       // AP
-      const table = `${dbname}interface_ap_api_logs`
+      const table = `${dbname}interface_ap_api_logs`;
       const queryNonVenErr = `select source_system,error_msg,file_nbr,vendor_id,subsidiary,invoice_nbr,invoice_date,housebill_nbr,master_bill_nbr,invoice_type,controlling_stn,currency,charge_cd,total,posted_date,gc_code,tax_code,unique_ref_nbr,internal_ref_nbr,intercompany,id,epay_status,system_id
               from ${table} where source_system = '${sourceSystem}' and is_report_sent ='N' and 
               error_msg NOT LIKE '%Vendor not found%'`;
 
-      console.info(queryNonVenErr)
+      console.info(queryNonVenErr);
 
       const nonVenErrdata = await executeQuery(
         connections,
@@ -202,7 +213,7 @@ async function getReportData(
           intercompany: e?.intercompany ?? "",
           id: e?.id ?? "",
           epay_status: e?.status ?? "",
-          system_id: e?.system_id ?? ""
+          system_id: e?.system_id ?? "",
         }));
         return [...formatedData, ...nonVenErrdata];
       } else {
@@ -240,7 +251,7 @@ async function getReportData(
         mainQuery = `select ${dbname}interface_ar.*, CONCAT('Customer not found. (customer_id: ', CAST(customer_id AS CHAR), ') Subsidiary: ', subsidiary) AS error_msg
         from ${dbname}interface_ar where source_system = '${sourceSystem}' and processed ='F' and customer_id in (${queryCuErr})
         GROUP BY invoice_nbr, invoice_type, gc_code, subsidiary`;
-      }else if (sourceSystem == "LL") {
+      } else if (sourceSystem == "LL") {
         mainQuery = `select ${dbname}interface_ar.*, CONCAT('Customer not found. (customer_id: ', CAST(customer_id AS CHAR), ') Subsidiary: ', subsidiary) AS error_msg
         from ${dbname}interface_ar where source_system = '${sourceSystem}' and processed ='F' and customer_id in (${queryCuErr})
         GROUP BY invoice_nbr, invoice_type, gc_code, subsidiary`;
@@ -279,56 +290,72 @@ async function getReportData(
       } else {
         return nonCuErrdata;
       }
-    }
-    else {
+    } else {
+      if (intercompanyType === "CROSSDOCK") {
+        query = `select distinct ia.* from ${dbname}interface_intracompany_api_logs ia
+          where ia.source_system = '${sourceSystem}' and ia.is_report_sent = 'N'`;
+
+        console.info("query:getReportData", query);
+        const data = await executeQuery(connections, sourceSystem, query);
+        console.info("query:data", data.length);
+        if (data && data.length > 0) {
+          return data.map((e) => ({
+            source_system: e.source_system,
+            error_msg: e.error_msg,
+            ...e,
+          }));
+        } else {
+          return [];
+        }
+      }
       // INTERCOMPANY
       if (sourceSystem === "CW") {
         if (intercompanyType === "AP") {
-          query=`select distinct ia.*,ial.error_msg,ial.id  from ${dbname}interface_ap ia 
+          query = `select distinct ia.*,ial.error_msg,ial.id  from ${dbname}interface_ap ia 
           join ${dbname}interface_intercompany_api_logs ial on ia.source_system=ial.source_system and 
           ia.internal_id=ial.ap_internal_id and ia.file_nbr= ial.file_nbr
-          where ia.intercompany ='Y' and ial.source_system = '${sourceSystem}' and ial.is_report_sent = 'N'`
+          where ia.intercompany ='Y' and ial.source_system = '${sourceSystem}' and ial.is_report_sent = 'N'`;
         } else {
-          query=`
+          query = `
           select distinct ar.*, ial.error_msg, ial.id from ${dbname}interface_ar ar
           join ${dbname}interface_intercompany_api_logs ial on ial.source_system = ar.source_system 
           and ial.ar_internal_id  = ar.internal_id and ial.file_nbr = ar.file_nbr 
-          where ar.intercompany ='Y' and ial.source_system = '${sourceSystem}' and ial.is_report_sent ='N'`
+          where ar.intercompany ='Y' and ial.source_system = '${sourceSystem}' and ial.is_report_sent ='N'`;
         }
-      }else if (sourceSystem === "AG") {
+      } else if (sourceSystem === "AG") {
         if (intercompanyType === "AP") {
-          query=`select distinct ia.*,ial.error_msg,ial.id  from ${dbname}interface_ap ia 
+          query = `select distinct ia.*,ial.error_msg,ial.id  from ${dbname}interface_ap ia 
           join ${dbname}interface_intercompany_api_logs ial on ia.source_system=ial.source_system and 
           ia.internal_id=ial.ap_internal_id and ia.file_nbr= ial.file_nbr
-          where ia.intercompany ='Y' and ial.source_system = '${sourceSystem}' and ial.is_report_sent = 'N'`
+          where ia.intercompany ='Y' and ial.source_system = '${sourceSystem}' and ial.is_report_sent = 'N'`;
         } else {
-          query=`
+          query = `
           select distinct ar.*, ial.error_msg, ial.id from ${dbname}interface_ar ar
           join ${dbname}interface_intercompany_api_logs ial on ial.source_system = ar.source_system 
           and ial.ar_internal_id  = ar.internal_id and ial.file_nbr = ar.file_nbr 
-          where ar.intercompany ='Y' and ial.source_system = '${sourceSystem}' and ial.is_report_sent ='N'`
+          where ar.intercompany ='Y' and ial.source_system = '${sourceSystem}' and ial.is_report_sent ='N'`;
         }
       } else if (sourceSystem === "TR") {
         if (intercompanyType === "AP") {
-          query=`select distinct ia.*,ial.error_msg,ial.id  from ${dbname}interface_ap ia 
+          query = `select distinct ia.*,ial.error_msg,ial.id  from ${dbname}interface_ap ia 
           join ${dbname}interface_intercompany_api_logs ial on ia.source_system=ial.source_system and 
           ia.internal_id=ial.ap_internal_id and ia.file_nbr= ial.file_nbr
-          where ia.intercompany ='Y' and ial.source_system = '${sourceSystem}' and ial.is_report_sent = 'N'`
+          where ia.intercompany ='Y' and ial.source_system = '${sourceSystem}' and ial.is_report_sent = 'N'`;
         } else {
-          query=`
+          query = `
           select distinct ar.*, ial.error_msg, ial.id from ${dbname}interface_ar ar
           join ${dbname}interface_intercompany_api_logs ial on ial.source_system = ar.source_system 
           and ial.ar_internal_id  = ar.internal_id and ial.file_nbr = ar.file_nbr 
-          where ar.intercompany ='Y' and ial.source_system = '${sourceSystem}' and ial.is_report_sent ='N'`
+          where ar.intercompany ='Y' and ial.source_system = '${sourceSystem}' and ial.is_report_sent ='N'`;
         }
       } else if (sourceSystem === "LL") {
         if (intercompanyType === "AP") {
-          query=`select distinct ia.*,ial.error_msg,ial.id  from ${dbname}interface_ap ia 
+          query = `select distinct ia.*,ial.error_msg,ial.id  from ${dbname}interface_ap ia 
           join ${dbname}interface_intercompany_api_logs ial on concat('LL', ia.source_system)=ial.source_system and 
           ia.internal_id=ial.ap_internal_id 
-          where ia.intercompany ='Y' and ial.source_system in ('LLWT', 'LLTR', 'LLM1') and ial.is_report_sent = 'N'`
+          where ia.intercompany ='Y' and ial.source_system in ('LLWT', 'LLTR', 'LLM1') and ial.is_report_sent = 'N'`;
         } else {
-          query=`
+          query = `
           select distinct ar.*, ial.error_msg, ial.id from ${dbname}interface_ar ar
           join ${dbname}interface_intercompany_api_logs ial on ial.source_system = concat(ar.source_system, 'WT')
           and ial.ar_internal_id  = ar.internal_id 
@@ -342,7 +369,7 @@ async function getReportData(
           select distinct ar.*, ial.error_msg, ial.id from ${dbname}interface_ar ar
           join ${dbname}interface_intercompany_api_logs ial on ial.source_system = concat(ar.source_system, 'M1')
           and ial.ar_internal_id  = ar.internal_id 
-          where ar.intercompany ='Y' and ial.source_system ='LLM1' and ial.is_report_sent ='N'`
+          where ar.intercompany ='Y' and ial.source_system ='LLM1' and ial.is_report_sent ='N'`;
         }
       }
       console.info("query:getReportData", query);
@@ -370,7 +397,7 @@ async function updateReportData(connections, sourceSystem, type, maxId) {
     if (type === "AP") {
       table = `${dbname}interface_ap_api_logs`;
     } else if (type === "AR") {
-      table = `${dbname}interface_ar_api_logs`
+      table = `${dbname}interface_ar_api_logs`;
     } else {
       table = `${dbname}interface_intercompany_api_logs`;
     }
@@ -409,8 +436,9 @@ function sendMail(
           pass: process.env.NETSUIT_AR_ERROR_EMAIL_PASS,
         },
       });
-      const title = `Netsuite ${sourceSystem} ${type} ${intercompanyType ? intercompanyType : ""
-        } Report ${process.env.STAGE.toUpperCase()}`;
+      const title = `Netsuite ${sourceSystem} ${type} ${
+        intercompanyType ? intercompanyType : ""
+      } Report ${process.env.STAGE.toUpperCase()}`;
       const message = {
         from: `${title} <${process.env.NETSUIT_AR_ERROR_EMAIL_FROM}>`,
         to:
@@ -437,6 +465,7 @@ function sendMail(
 
       transporter.sendMail(message, function (err, info) {
         if (err) {
+          console.log("🚀 ~ send mail:err:", err)
           resolve(true);
         } else {
           resolve(true);
