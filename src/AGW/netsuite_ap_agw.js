@@ -193,6 +193,7 @@ module.exports.handler = async (event, context, callback) => {
       let invoiceIDs = [];
       try {
         orderData = await getDataGroupBy(connections);
+        console.info('🚀 -> file: netsuite_ap_agw.js:196 -> module.exports.handler= -> orderData:', orderData);
       } catch (error) {
         return {
           hasMoreData: "true",
@@ -209,6 +210,7 @@ module.exports.handler = async (event, context, callback) => {
         }
         currentCount = orderData.length;
         invoiceDataList = await getInvoiceNbrData(connections, invoiceIDs);
+        console.info('🚀 -> file: netsuite_ap_agw.js:213 -> module.exports.handler= -> invoiceDataList:', invoiceDataList);
         console.info("invoiceDataList", invoiceDataList.length);
       } catch (error) {
         console.error("error:getInvoiceNbrData:try:catch", error);
@@ -289,10 +291,14 @@ async function mainProcess(item, invoiceDataList) {
      * Make Json payload
      */
     const jsonPayload = await makeJsonPayload(dataList);
+    console.info('🚀 -> file: netsuite_ap_agw.js:292 -> mainProcess -> jsonPayload:', jsonPayload);
+    console.info('🚀 -> file: netsuite_ap_agw.js:292 -> mainProcess -> jsonPayload:', JSON.stringify(jsonPayload));
+    
     /**
      * create invoice
      */
     const invoiceId = await createInvoice(jsonPayload, singleItem);
+    console.info('🚀 -> file: netsuite_ap_agw.js:299 -> mainProcess -> jsonPayload:', jsonPayload);
     console.info("invoiceId",invoiceId);
 
     if (queryOperator == ">") {
@@ -343,9 +349,7 @@ async function getDataGroupBy(connections) {
     FROM ${apDbName} 
     WHERE  ((internal_id is null and processed is null and vendor_internal_id is not null) or
     (vendor_internal_id is not null and processed ='F' and processed_date ${dateCheckOperator} '${today}')) and 
-    ((intercompany='Y' and pairing_available_flag ='Y') OR 
-      intercompany='N'
-    )
+    (intercompany='Y' OR intercompany='N')
     and source_system = '${source_system}' and invoice_nbr != '' and gc_code is not null 
     GROUP BY invoice_nbr, vendor_id, invoice_type,gc_code 
     having tc ${queryOperator} ${lineItemPerProcess} 
@@ -392,6 +396,15 @@ async function makeJsonPayload(data) {
     const hardcode = getHardcodeData(
       singleItem?.intercompany == "Y" ? true : false
     );
+
+    const itemList = data.filter((e) => {
+      return e.charge_cd_desc !== "GLACCOUNT";
+    });
+
+    const expensesList = data.filter((e) => {
+      return e.charge_cd_desc === "GLACCOUNT";
+    });
+
     /**
      * head level details
      */
@@ -424,7 +437,13 @@ async function makeJsonPayload(data) {
       custbody_service_level: singleItem?.service_level ?? "",//2674
       memo: singleItem.invoice_summary ?? "",
       ee_invoice: singleItem.internal_ref_nbr ?? "",
-      item: data.map((e) => {
+    };
+    if (singleItem.invoice_type == "IN") {
+      payload.approvalstatus = "2";
+    }
+
+    if(itemList.length > 0){
+      payload.item = data.map((e) => {
         return {
           ...(e.tax_code_internal_id ?? "" !== "" ? { taxcode: e.tax_code_internal_id } : {}),
           item: e.charge_cd_internal_id ?? "",
@@ -455,10 +474,24 @@ async function makeJsonPayload(data) {
           custcol_miles_distance: e.miles ?? "",
           custcol_chargeable_weight: e.chargeable_weight ?? "",
         };
-      }),
-    };
-    if (singleItem.invoice_type == "IN") {
-      payload.approvalstatus = "2";
+      })
+    }
+
+    if(expensesList.length > 0){
+      payload.expenses = data.map((e) => {
+        return {
+          account: e.charge_cd_internal_id ?? "",
+          amount: +parseFloat(e.total).toFixed(2) ?? "",
+          department: hardcode.department.line ?? "",
+          class: 
+          hardcode.class.line[
+          e.business_segment.split(":")[1].trim().toLowerCase()
+          ],
+          location: {
+            refName: e.handling_stn ?? "",
+          }
+        }
+      })
     }
 
     return payload;
