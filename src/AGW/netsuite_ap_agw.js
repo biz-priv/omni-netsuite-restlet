@@ -478,7 +478,7 @@ async function makeJsonPayload(data) {
     }
 
     if(expensesList.length > 0){
-      payload.expenses = data.map((e) => {
+      payload.expense = data.map((e) => {
         return {
           account: e.charge_cd_internal_id ?? "",
           amount: +parseFloat(e.total).toFixed(2) ?? "",
