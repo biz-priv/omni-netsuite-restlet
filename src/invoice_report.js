@@ -8,8 +8,8 @@ const {
 const dbname = process.env.DATABASE_NAME;
 const mailList = {
   CW: {
-    AR: process.env.NETSUIT_AR_ERROR_EMAIL_TO,
-    AP: process.env.NETSUIT_AP_ERROR_EMAIL_TO,
+    AR: process.env.NETSUIT_CW_ERROR_EMAIL_TO,
+    AP: process.env.NETSUIT_CW_ERROR_EMAIL_TO,
   },
   AG: {
     AR: process.env.NETSUIT_AGW_ERROR_EMAIL_TO,
