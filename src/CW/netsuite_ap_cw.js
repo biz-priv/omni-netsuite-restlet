@@ -345,7 +345,7 @@ async function getDataGroupBy(connections) {
     WHERE  ((internal_id is null and processed is null and vendor_internal_id is not null) or
     (vendor_internal_id is not null and processed ='F' and processed_date ${dateCheckOperator} '${today}')) and 
     (intercompany='Y' OR intercompany='N')
-    and source_system = '${source_system}' and invoice_nbr != '' and gc_code is not null 
+    and source_system = '${source_system}' and invoice_nbr != '' and gc_code is not null and subsidiary is not null 
     GROUP BY invoice_nbr, vendor_id, invoice_type,gc_code 
     having tc ${queryOperator} ${lineItemPerProcess} 
     limit ${totalCountPerLoop + 1}`;
