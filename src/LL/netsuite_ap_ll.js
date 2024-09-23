@@ -747,7 +747,7 @@ async function billPaymentProcess() {
     try {
       const query = `select ae.vendor_id, ae.vendor_internal_id, ae.invoice_nbr,ae.internal_id,sum(ae.total)-COALESCE (ae.discount,0) as rate,ae.system_id, aes.status, ae.source_system
       from (select vendor_id,invoice_nbr,internal_id,system_id,status,source_system,processed,vendor_internal_id,total,discount from ${apDbName} where processed='P'
-        union select vendor_id,invoice_nbr,internal_id,system_id,status,source_system,processed,vendor_internal_id,total,discount from ${apDbNamePrev}interface_ap_epay_his) ae
+        union all select vendor_id,invoice_nbr,internal_id,system_id,status,source_system,processed,vendor_internal_id,total,discount from ${apDbNamePrev}interface_ap_epay_his) ae
       join ${apDbNamePrev}interface_ap_epay_status aes on ae.invoice_nbr=aes.invoice_nbr and ae.system_id=aes.system_id
         where ae.internal_id is not null and ae.processed ='P'
         and ((aes.processed is null) or (aes.processed = 'F' and aes.processed_date < '${today}')) and aes.status ='COMPLETED'
