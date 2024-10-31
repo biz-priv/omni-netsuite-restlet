@@ -12,16 +12,16 @@ const mailList = {
     AP: process.env.NETSUIT_AP_CW_ERROR_EMAIL_TO,
   },
   AG: {
-    AR: process.env.NETSUIT_AGW_ERROR_EMAIL_TO,
-    AP: process.env.NETSUIT_AGW_ERROR_EMAIL_TO,
+    AR: process.env.NETSUIT_AR_AGW_ERROR_EMAIL_TO,
+    AP: process.env.NETSUIT_AP_AGW_ERROR_EMAIL_TO,
   },
   TR: {
     AR: process.env.NETSUIT_AR_TR_ERROR_EMAIL_TO,
     AP: process.env.NETSUIT_AP_TR_ERROR_EMAIL_TO,
   },
   M1: {
-    AR: process.env.NETSUIT_AR_ERROR_EMAIL_TO,
-    AP: process.env.NETSUIT_AP_ERROR_EMAIL_TO,
+    AR: process.env.NETSUIT_AR_M1_ERROR_EMAIL_TO,
+    AP: process.env.NETSUIT_AP_M1_ERROR_EMAIL_TO,
   },
   INTERCOMPANY: {
     CW: process.env.NETSUIT_INTERCOMPANY_ERROR_EMAIL_TO,
@@ -29,8 +29,8 @@ const mailList = {
     WTLL: process.env.NETSUIT_INTERCOMPANY_ERROR_EMAIL_TO,
   },
   LL: {
-    AR: process.env.NETSUIT_AR_ERROR_EMAIL_TO,
-    AP: process.env.NETSUIT_AP_ERROR_EMAIL_TO,
+    AR: process.env.NETSUIT_AR_LL_ERROR_EMAIL_TO,
+    AP: process.env.NETSUIT_AP_LL_ERROR_EMAIL_TO,
   }
 };
 
