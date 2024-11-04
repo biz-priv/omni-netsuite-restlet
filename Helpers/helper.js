@@ -358,46 +358,48 @@ async function sendDevNotification(
   error
 ) {
   try {
-    const transporter = nodemailer.createTransport({
-      host: process.env.NETSUIT_AR_ERROR_EMAIL_HOST,
-      port: 587,
-      secure: false, // true for 465, false for other ports
-      auth: {
-        user: process.env.NETSUIT_AR_ERROR_EMAIL_USER,
-        pass: process.env.NETSUIT_AR_ERROR_EMAIL_PASS,
-      },
-    });
+    // ***** commenting out as we are already sending a report of all erred records after every run.
 
-    const message = {
-      from: `Netsuite <${process.env.NETSUIT_AR_ERROR_EMAIL_FROM}>`,
-      to: process.env.NETSUIT_AR_ERROR_EMAIL_TO,
-      subject: `Netsuite ${process.env.STAGE.toUpperCase()} Error ${sourceSystem} - ${invType} - ${process.env.STAGE.toUpperCase()}`,
-      html: `
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-          <meta charset="UTF-8">
-          <meta http-equiv="X-UA-Compatible" content="IE=edge">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Netsuite Error</title>
-      </head>
-      <body>
-        <h3>Error:- ${sourceSystem} - ${invType} - ${apiName} </h3>
+    // const transporter = nodemailer.createTransport({
+    //   host: process.env.NETSUIT_AR_ERROR_EMAIL_HOST,
+    //   port: 587,
+    //   secure: false, // true for 465, false for other ports
+    //   auth: {
+    //     user: process.env.NETSUIT_AR_ERROR_EMAIL_USER,
+    //     pass: process.env.NETSUIT_AR_ERROR_EMAIL_PASS,
+    //   },
+    // });
 
-        <p> Source System:- ${sourceSystem ?? ""}</p> 
-        <p> Invoice Type:- ${invType ?? ""}</p> 
-        <p> Invoice Data:- </p> <pre>${JSON.stringify(
-          invoiceData,
-          null,
-          4
-        )}</pre>
-        <p> Error:- </p> <pre>${JSON.stringify(error, null, 4)}</pre>
-      </body>
-      </html>
-      `,
-    };
+    // const message = {
+    //   from: `Netsuite <${process.env.NETSUIT_AR_ERROR_EMAIL_FROM}>`,
+    //   to: process.env.NETSUIT_AR_ERROR_EMAIL_TO,
+    //   subject: `Netsuite ${process.env.STAGE.toUpperCase()} Error ${sourceSystem} - ${invType} - ${process.env.STAGE.toUpperCase()}`,
+    //   html: `
+    //   <!DOCTYPE html>
+    //   <html lang="en">
+    //   <head>
+    //       <meta charset="UTF-8">
+    //       <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    //       <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    //       <title>Netsuite Error</title>
+    //   </head>
+    //   <body>
+    //     <h3>Error:- ${sourceSystem} - ${invType} - ${apiName} </h3>
 
-    await transporter.sendMail(message);
+    //     <p> Source System:- ${sourceSystem ?? ""}</p> 
+    //     <p> Invoice Type:- ${invType ?? ""}</p> 
+    //     <p> Invoice Data:- </p> <pre>${JSON.stringify(
+    //       invoiceData,
+    //       null,
+    //       4
+    //     )}</pre>
+    //     <p> Error:- </p> <pre>${JSON.stringify(error, null, 4)}</pre>
+    //   </body>
+    //   </html>
+    //   `,
+    // };
+
+    // await transporter.sendMail(message);
     return true;
   } catch (error) {
     return false;
