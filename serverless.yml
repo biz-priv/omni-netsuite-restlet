@@ -23,18 +23,12 @@ provider:
   environment:
     STAGE: ${self:provider.stage}
     REGION: ${self:provider.region}
-    DBNAME: ${ssm:/omni-dw/${self:provider.stage}/db/name}
-    USER: ${ssm:/omni-dw/${self:provider.stage}/db/user~true}
-    HOST: ${ssm:/omni-dw/${self:provider.stage}/db/host~true}
-    PASS: ${ssm:/omni-dw/${self:provider.stage}/db/password~true}
-    PORT: ${ssm:/omni-dw/${self:provider.stage}/db/port}
     db_username: ${ssm:/omni-mcleod-finance/${self:provider.stage}/db/user~true}
     db_password: ${ssm:/omni-mcleod-finance/${self:provider.stage}/db/password~true}
     db_name: ${ssm:/omni-mcleod-finance/${self:provider.stage}/db/name~true}
     db_host: ${ssm:/omni-mcleod-finance/${self:provider.stage}/db/host~true}
     db_port: ${ssm:/omni-mcleod-finance/${self:provider.stage}/db/port~true}
     DATABASE_NAME: ${ssm:/omni-dw/${self:provider.stage}/databaseName}
-    NETSUIT_BASE_URL: ${ssm:/omni-dw/${self:provider.stage}/netsuite/baseUrl}
     NETSUIT_AR_API_ENDPOINT: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/apiEndpoint}
     NETSUIT_AR_ACCOUNT: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/authConfig/account}
     NETSUIT_AR_CONSUMER_KEY: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/authConfig/consumerKey}
@@ -52,8 +46,7 @@ provider:
     NETSUIT_MCL_TOKEN_KEY: ${ssm:/omni-dw/${self:provider.stage}/netsuitMCL/authConfig/tokenKeyMCL~true}
     NETSUIT_MCL_TOKEN_SECRET: ${ssm:/omni-dw/${self:provider.stage}/netsuitMCL/authConfig/tokenSecretMCL~true}
 
-    NETSUIT_AR_WDSLPATH: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/authConfig/wdslPath} 
-    NETSUIT_AR_ERROR_TABLE: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/dynamo/errorTable}
+    NETSUIT_AR_WDSLPATH: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/authConfig/wdslPath}
     NETSUIT_AR_ERROR_EMAIL_HOST: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/host}
     NETSUIT_AR_ERROR_EMAIL_USER: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/user}
     NETSUIT_AR_ERROR_EMAIL_PASS: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/pass}
@@ -61,7 +54,6 @@ provider:
     NETSUIT_AR_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/to}
     NS_RESTLET_INVOICE_REPORT: ${self:service}-invoice-report-${self:provider.stage}
     NS_BASE_URL: ${ssm:/${self:service}/${self:provider.stage}/netsuiteBaseUrl}
-    NS_BILL_PAYMENT_URL: ${ssm:/${self:service}/${self:provider.stage}/netsuiteBillPaymentUrl}
 
 plugins:
   - serverless-offline
