@@ -17,3 +17,4 @@ function:
     NETSUIT_RESTLET_VB_URL: ${ssm:/omni-dw/${self:provider.stage}/vendorbill/apiEndpoint}
     NETSUIT_RESTLET_VC_URL: ${ssm:/omni-dw/${self:provider.stage}/vendorcredit/apiEndpoint}
     FUNCTION_NAME: ${self:service}-ap-ll-${self:provider.stage}
+    NS_BILL_PAYMENT_URL: ${ssm:/${self:service}/${self:provider.stage}/netsuiteBillPaymentUrl}
