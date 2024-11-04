@@ -13,6 +13,12 @@ function:
     NETSUIT_AP_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAP/errorEmail/to}
     NETSUIT_AR_TR_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/TR/errorEmail/to}
     NETSUIT_AP_TR_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAP/TR/errorEmail/to}
+    NETSUIT_AR_M1_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/M1/errorEmail/to}
+    NETSUIT_AP_M1_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAP/M1/errorEmail/to}
+    NETSUIT_AR_LL_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/LL/errorEmail/to}
+    NETSUIT_AP_LL_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAP/LL/errorEmail/to}
+    NETSUIT_AR_AGW_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/AGW/errorEmail/to}
+    NETSUIT_AP_AGW_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAP/AGW/errorEmail/to}
     NETSUIT_AGW_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuit/AGW/errorEmail/to}
     NETSUIT_AR_CW_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/CW/errorEmail/to}
     NETSUIT_AP_CW_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAP/CW/errorEmail/to}
