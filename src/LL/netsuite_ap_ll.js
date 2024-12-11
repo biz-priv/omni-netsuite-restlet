@@ -23,7 +23,7 @@ let currentCount = 0;
 const lineItemPerProcess = 500;
 let totalCountPerLoop = 20;
 let queryOffset = 0;
-let queryinvoiceType = "IN"; // IN / CM
+let queryinvoiceType = "IN";
 let queryOperator = "<=";
 let queryInvoiceId = null;
 let queryInvoiceNbr = null;
@@ -938,29 +938,3 @@ async function sendBillpaymentData(payload) {
     }
   }
 }
-
-// async function startNextStep() {
-//     try {
-//       const params = {
-//         stateMachineArn: process.env.NETSUITE_INTERCOMPANY_STEP_ARN,
-//         input: JSON.stringify({}),
-//       };
-//       const stepfunctions = new AWS.StepFunctions();
-//       const data = await new Promise((resolve, reject) => {
-//         stepfunctions.startExecution(params, (err, data) => {
-//           if (err) {
-//             console.error("Netsuit NETSUITE_INTERCOMPANY_STEP_ARN trigger failed");
-//             reject(err);
-//           } else {
-//             console.info("Netsuit NETSUITE_INTERCOMPANY_STEP_ARN started");
-//             resolve(data);
-//           }
-//         });
-//       });
-  
-//       return true;
-//     } catch (error) {
-//       console.error("Error in startNextStep:", error);
-//       return false;
-//     }
-//   }
