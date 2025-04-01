@@ -1,6 +1,8 @@
 const nodemailer = require("nodemailer");
 const moment = require("moment");
 const { parse } = require("json2csv");
+const AWS = require("aws-sdk");
+const lambda = new AWS.Lambda();
 const {
   sendDevNotification,
   getConnectionToRds,
@@ -45,8 +47,19 @@ module.exports.handler = async (event, context, callback) => {
     sourceSystem = eventData[0];
     reportType = eventData[1];
 
-    connections = await getConnectionToRds(process.env);
+    try {
+      await triggerReportLambda(
+        "omni-netsuite-restlet-invoice-report-dev",
+        event.invPayload
+      );
 
+      // wait for 2min
+      await new Promise((resolve) => setTimeout(resolve, 120000));
+    } catch (e) {
+      console.error("error:triggerReportLambda", e);
+    }
+
+    connections = await getConnectionToRds(process.env);
 
     if (reportType === "AR") {
       await generateCsvAndMail(connections, sourceSystem, "AR");
@@ -240,7 +253,7 @@ async function getReportData(
         mainQuery = `select ${dbname}interface_ar.*, CONCAT('Customer not found. (customer_id: ', CAST(customer_id AS CHAR), ') Subsidiary: ', subsidiary) AS error_msg
         from ${dbname}interface_ar where source_system = '${sourceSystem}' and processed ='F' and customer_id in (${queryCuErr})
         GROUP BY invoice_nbr, invoice_type, gc_code, subsidiary`;
-      }else if (sourceSystem == "LL") {
+      } else if (sourceSystem == "LL") {
         mainQuery = `select ${dbname}interface_ar.*, CONCAT('Customer not found. (customer_id: ', CAST(customer_id AS CHAR), ') Subsidiary: ', subsidiary) AS error_msg
         from ${dbname}interface_ar where source_system = '${sourceSystem}' and processed ='F' and customer_id in (${queryCuErr})
         GROUP BY invoice_nbr, invoice_type, gc_code, subsidiary`;
@@ -284,25 +297,25 @@ async function getReportData(
       // INTERCOMPANY
       if (sourceSystem === "CW") {
         if (intercompanyType === "AP") {
-          query=`select distinct ia.*,ial.error_msg,ial.id  from ${dbname}interface_ap ia 
+          query = `select distinct ia.*,ial.error_msg,ial.id  from ${dbname}interface_ap ia 
           join ${dbname}interface_intercompany_api_logs ial on ia.source_system=ial.source_system and 
           ia.internal_id=ial.ap_internal_id and ia.file_nbr= ial.file_nbr
           where ia.intercompany ='Y' and ial.source_system = '${sourceSystem}' and ial.is_report_sent = 'N'`
         } else {
-          query=`
+          query = `
           select distinct ar.*, ial.error_msg, ial.id from ${dbname}interface_ar ar
           join ${dbname}interface_intercompany_api_logs ial on ial.source_system = ar.source_system 
           and ial.ar_internal_id  = ar.internal_id and ial.file_nbr = ar.file_nbr 
           where ar.intercompany ='Y' and ial.source_system = '${sourceSystem}' and ial.is_report_sent ='N'`
         }
-      }else if (sourceSystem === "AG") {
+      } else if (sourceSystem === "AG") {
         if (intercompanyType === "AP") {
-          query=`select distinct ia.*,ial.error_msg,ial.id  from ${dbname}interface_ap ia 
+          query = `select distinct ia.*,ial.error_msg,ial.id  from ${dbname}interface_ap ia 
           join ${dbname}interface_intercompany_api_logs ial on ia.source_system=ial.source_system and 
           ia.internal_id=ial.ap_internal_id and ia.file_nbr= ial.file_nbr
           where ia.intercompany ='Y' and ial.source_system = '${sourceSystem}' and ial.is_report_sent = 'N'`
         } else {
-          query=`
+          query = `
           select distinct ar.*, ial.error_msg, ial.id from ${dbname}interface_ar ar
           join ${dbname}interface_intercompany_api_logs ial on ial.source_system = ar.source_system 
           and ial.ar_internal_id  = ar.internal_id and ial.file_nbr = ar.file_nbr 
@@ -310,12 +323,12 @@ async function getReportData(
         }
       } else if (sourceSystem === "TR") {
         if (intercompanyType === "AP") {
-          query=`select distinct ia.*,ial.error_msg,ial.id  from ${dbname}interface_ap ia 
+          query = `select distinct ia.*,ial.error_msg,ial.id  from ${dbname}interface_ap ia 
           join ${dbname}interface_intercompany_api_logs ial on ia.source_system=ial.source_system and 
           ia.internal_id=ial.ap_internal_id and ia.file_nbr= ial.file_nbr
           where ia.intercompany ='Y' and ial.source_system = '${sourceSystem}' and ial.is_report_sent = 'N'`
         } else {
-          query=`
+          query = `
           select distinct ar.*, ial.error_msg, ial.id from ${dbname}interface_ar ar
           join ${dbname}interface_intercompany_api_logs ial on ial.source_system = ar.source_system 
           and ial.ar_internal_id  = ar.internal_id and ial.file_nbr = ar.file_nbr 
@@ -323,12 +336,12 @@ async function getReportData(
         }
       } else if (sourceSystem === "LL") {
         if (intercompanyType === "AP") {
-          query=`select distinct ia.*,ial.error_msg,ial.id  from ${dbname}interface_ap ia 
+          query = `select distinct ia.*,ial.error_msg,ial.id  from ${dbname}interface_ap ia 
           join ${dbname}interface_intercompany_api_logs ial on concat('LL', ia.source_system)=ial.source_system and 
           ia.internal_id=ial.ap_internal_id 
           where ia.intercompany ='Y' and ial.source_system in ('LLWT', 'LLTR', 'LLM1') and ial.is_report_sent = 'N'`
         } else {
-          query=`
+          query = `
           select distinct ar.*, ial.error_msg, ial.id from ${dbname}interface_ar ar
           join ${dbname}interface_intercompany_api_logs ial on ial.source_system = concat(ar.source_system, 'WT')
           and ial.ar_internal_id  = ar.internal_id 
@@ -447,4 +460,30 @@ function sendMail(
       resolve(true);
     }
   });
+}
+
+/**
+ * send report lambda trigger function
+ */
+async function triggerReportLambda(functionName, payloadData) {
+  try {
+    const params = {
+      FunctionName: functionName,
+      Payload: JSON.stringify({ invPayload: payloadData }, null, 2),
+    };
+
+    const data = await lambda.invoke(params).promise();
+
+    if (data.Payload) {
+      console.info(data.Payload);
+      return "success";
+    } else {
+      console.info("unable to send report");
+      return "failed";
+    }
+  } catch (error) {
+    console.info("error:triggerReportLambda", error);
+    console.info("unable to send report");
+    return "failed";
+  }
 }
