@@ -359,27 +359,28 @@ async function createIntracompanyFailedRecords(connections,source_system, item, 
  * send report lambda trigger function
  */
 async function triggerReportLambda(functionName, payloadData) {
-  try {
-    const params = {
-      FunctionName: functionName,
-      Payload: JSON.stringify({ invPayload: payloadData }, null, 2),
-    };
-
-    const data = await lambda.invoke(params).promise();
-
-    if (data.Payload) {
-      console.info(data.Payload);
-      return 'success';
-    } else {
+    try {
+      const params = {
+        FunctionName: functionName,
+        Payload: JSON.stringify({ invPayload: payloadData }, null, 2),
+        InvocationType: "Event",
+      };
+  
+      const data = await lambda.invoke(params).promise();
+  
+      if (data.StatusCode === 202) {
+        console.info("report lambda trigger success with payload ", payloadData);
+        return 'success';
+      } else {
+        console.info('unable to send report');
+        return 'failed';
+      }
+    } catch (error) {
+      console.info('error:triggerReportLambda', error);
       console.info('unable to send report');
       return 'failed';
     }
-  } catch (error) {
-    console.info('error:triggerReportLambda', error);
-    console.info('unable to send report');
-    return 'failed';
   }
-}
 
 
 async function sendDevNotification(

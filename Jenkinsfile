@@ -36,7 +36,7 @@ pipeline {
             steps {
                 withAWS(credentials: 'omni-aws-creds'){
                     sh """
-                    npm i serverless
+                    npm i serverless@2.72.4
                     npm i
                     cd lambdaLayer/lib/nodejs
                     npm i
