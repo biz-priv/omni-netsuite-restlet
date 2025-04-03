@@ -8,7 +8,9 @@ provider:
   region: us-east-1
   timeout: 30
   memorySize: 256
-  deploymentBucket: ${ssm:/omni-dw/${self:provider.stage}/sls/deployment/bucket}
+  deploymentBucket:
+    name: ${ssm:/omni-dw/${self:provider.stage}/sls/deployment/bucket}
+    serverSideEncryption: AES256
   role: ${ssm:/omni-dw/${self:provider.stage}/lambda/role}
   vpc:
     securityGroupIds:
