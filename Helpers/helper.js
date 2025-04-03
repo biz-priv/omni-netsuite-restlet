@@ -127,6 +127,38 @@ async function getConnectionToRds(env) {
   }
 }
 
+
+/**
+ * Config for connections
+ * @param {*} env
+ * @returns
+ */
+
+function getConnectionPool() {
+
+  const env = process.env;
+  try {
+      const dbUser = env.db_username;
+      const dbPassword = env.db_password;
+      const dbHost = env.db_host;
+      const dbPort = env.db_port;
+      const dbName = env.db_name;
+      const connection = mysql.createPool({
+          host: dbHost,
+          user: dbUser,
+          password: dbPassword,
+          database: dbName,
+          waitForConnections: true,
+          connectionLimit: 5,
+          queueLimit: 0,
+          port: dbPort,
+      });
+      return connection;
+  } catch (error) {
+      console.error(error);
+  }
+}
+
 /**
  * handle error logs AR
  */
@@ -458,4 +490,5 @@ module.exports = {
   createIntracompanyFailedRecords,
   getAuthorizationHeader,
   setDelay,
+  getConnectionPool
 };
