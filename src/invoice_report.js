@@ -1181,7 +1181,7 @@ async function updateReportData(sourceSystem, type, data) {
                     report_sent_time = '${moment().format("YYYY-MM-DD H:m:s")}' 
                     where source_system = '${sourceSystem}' and is_report_sent ='N' and id <= ${maxId}`;
         console.info("query", query);
-        return await executeQuery(connections, sourceSystem, query);
+        return await executeQuery(query);
     } catch (error) {
         console.error("error:updateReportData", error);
         throw error;
