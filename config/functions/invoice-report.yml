@@ -30,7 +30,6 @@ function:
     NETSUIT_AR_WT_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/WT/errorEmail/to}
     NETSUIT_AP_WT_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAP/WT/errorEmail/to}
     NETSUIT_AR_MCL_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/MCL/errorEmail/to}
-    NETSUIT_AP_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAP/errorEmail/to}
   package:
     include:
       - src/invoice_report.js
