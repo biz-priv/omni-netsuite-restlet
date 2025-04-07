@@ -1162,7 +1162,7 @@ function getErrorResolutionGuide() {
  */
 async function updateReportData(sourceSystem, type, data) {
     try {
-        const maxId = Math.max(...data.map((e) => e.id));
+        let maxId = Math.max(...data.map((e) => e.id));
         let table = "";
         if (type === "AP") {
             table = `${dbname}interface_ap_api_logs`;
