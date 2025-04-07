@@ -127,6 +127,38 @@ async function getConnectionToRds(env) {
   }
 }
 
+
+/**
+ * Config for connections
+ * @param {*} env
+ * @returns
+ */
+
+function getConnectionPool() {
+
+  const env = process.env;
+  try {
+      const dbUser = env.db_username;
+      const dbPassword = env.db_password;
+      const dbHost = env.db_host;
+      const dbPort = env.db_port;
+      const dbName = env.db_name;
+      const connection = mysql.createPool({
+          host: dbHost,
+          user: dbUser,
+          password: dbPassword,
+          database: dbName,
+          waitForConnections: true,
+          connectionLimit: 5,
+          queueLimit: 0,
+          port: dbPort,
+      });
+      return connection;
+  } catch (error) {
+      console.error(error);
+  }
+}
+
 /**
  * handle error logs AR
  */
@@ -351,60 +383,33 @@ async function triggerReportLambda(functionName, payloadData) {
   }
 
 
-async function sendDevNotification(
-  sourceSystem,
-  invType,
-  apiName,
-  invoiceData,
-  error
-) {
-  try {
-    // ***** commenting out as we are already sending a report of all erred records after every run.
+  async function sendDevNotification(sourceSystem, invType, error) {
+    try {
+        // send message through ses
+        const ses = new AWS.SES({ region: "us-east-1" });
+        await ses
+            .sendEmail({
+                Source: "no-reply@omnilogistics.com",
+                Destination: {
+                    ToAddresses: ["BizCloudDev@omnilogistics.com"],
+                },
+                Message: {
+                    Subject: {
+                        Data: `Error in ${sourceSystem} ${invType}`,
+                    },
+                    Body: {
+                        Text: {
+                            Data: `Error in ${sourceSystem} ${invType} with error ${error}`,
+                        },
+                    },
+                },
+            })
+            .promise();
 
-    // const transporter = nodemailer.createTransport({
-    //   host: process.env.NETSUIT_AR_ERROR_EMAIL_HOST,
-    //   port: 587,
-    //   secure: false, // true for 465, false for other ports
-    //   auth: {
-    //     user: process.env.NETSUIT_AR_ERROR_EMAIL_USER,
-    //     pass: process.env.NETSUIT_AR_ERROR_EMAIL_PASS,
-    //   },
-    // });
-
-    // const message = {
-    //   from: `Netsuite <${process.env.NETSUIT_AR_ERROR_EMAIL_FROM}>`,
-    //   to: process.env.NETSUIT_AR_ERROR_EMAIL_TO,
-    //   subject: `Netsuite ${process.env.STAGE.toUpperCase()} Error ${sourceSystem} - ${invType} - ${process.env.STAGE.toUpperCase()}`,
-    //   html: `
-    //   <!DOCTYPE html>
-    //   <html lang="en">
-    //   <head>
-    //       <meta charset="UTF-8">
-    //       <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    //       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    //       <title>Netsuite Error</title>
-    //   </head>
-    //   <body>
-    //     <h3>Error:- ${sourceSystem} - ${invType} - ${apiName} </h3>
-
-    //     <p> Source System:- ${sourceSystem ?? ""}</p> 
-    //     <p> Invoice Type:- ${invType ?? ""}</p> 
-    //     <p> Invoice Data:- </p> <pre>${JSON.stringify(
-    //       invoiceData,
-    //       null,
-    //       4
-    //     )}</pre>
-    //     <p> Error:- </p> <pre>${JSON.stringify(error, null, 4)}</pre>
-    //   </body>
-    //   </html>
-    //   `,
-    // };
-
-    // await transporter.sendMail(message);
-    return true;
-  } catch (error) {
-    return false;
-  }
+        return true;
+    } catch (error) {
+        return false;
+    }
 }
 
 
@@ -459,4 +464,5 @@ module.exports = {
   createIntracompanyFailedRecords,
   getAuthorizationHeader,
   setDelay,
+  getConnectionPool
 };
