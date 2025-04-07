@@ -1,36 +1,64 @@
 ---
 function:
-  handler: src/invoice_report.handler
-  layers:
-    - { Ref: CommonNetsuiteLibsLambdaLayer }
-  name: ${self:service}-invoice-report-${self:provider.stage}
-  description: Netsuite restlet Invoice  Report service - ${self:provider.stage}
-  runtime: nodejs14.x
-  memorySize: 2048
-  timeout: 900
-  environment:
-    NETSUIT_AR_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/to}
-    NETSUIT_AP_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAP/errorEmail/to}
-    NETSUIT_AR_TR_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/TR/errorEmail/to}
-    NETSUIT_AP_TR_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAP/TR/errorEmail/to}
-    NETSUIT_AR_M1_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/M1/errorEmail/to}
-    NETSUIT_AP_M1_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAP/M1/errorEmail/to}
-    NETSUIT_AR_LL_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/LL/errorEmail/to}
-    NETSUIT_AP_LL_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAP/LL/errorEmail/to}
-    NETSUIT_AR_AGW_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/AGW/errorEmail/to}
-    NETSUIT_AP_AGW_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAP/AGW/errorEmail/to}
-    NETSUIT_AGW_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuit/AGW/errorEmail/to}
-    NETSUIT_AR_CW_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/CW/errorEmail/to}
-    NETSUIT_AP_CW_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAP/CW/errorEmail/to}
-    # NETSUIT_AR_ERROR_EMAIL_USER: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/user}
-    # NETSUIT_AR_ERROR_EMAIL_PASS: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/pass}
-    # NETSUIT_AR_ERROR_EMAIL_HOST: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/host}
-    # NETSUIT_AR_ERROR_EMAIL_FROM: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/from}
-    # NETSUIT_INTERCOMPANY_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/intercompany/errorEmail/to}
-    NETSUIT_AR_WT_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/WT/errorEmail/to}
-    NETSUIT_AP_WT_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAP/WT/errorEmail/to}
-    NETSUIT_AR_MCL_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/MCL/errorEmail/to}
-  package:
-    include:
-      - src/invoice_report.js
-      - Helpers/**
+    handler: src/invoice_report.handler
+    layers:
+        - { Ref: CommonNetsuiteLibsLambdaLayer }
+    name: ${self:service}-invoice-report-${self:provider.stage}
+    description: Netsuite restlet Invoice  Report service - ${self:provider.stage}
+    runtime: nodejs14.x
+    memorySize: 2048
+    timeout: 900
+    environment:
+        BIZDEV_EMAIL: ${ssm:/omni/${self:provider.stage}/bizdev-email}
+        NETSUIT_AP_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAP/errorEmail/to}
+        NETSUIT_AR_TR_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/TR/errorEmail/to}
+        NETSUIT_AP_TR_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAP/TR/errorEmail/to}
+        NETSUIT_AR_M1_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/M1/errorEmail/to}
+        NETSUIT_AP_M1_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAP/M1/errorEmail/to}
+        NETSUIT_AR_LL_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/LL/errorEmail/to}
+        NETSUIT_AP_LL_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAP/LL/errorEmail/to}
+        NETSUIT_AR_AGW_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/AGW/errorEmail/to}
+        NETSUIT_AP_AGW_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAP/AGW/errorEmail/to}
+        # NETSUIT_AGW_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuit/AGW/errorEmail/to}
+        NETSUIT_AR_CW_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/CW/errorEmail/to}
+        NETSUIT_AP_CW_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAP/CW/errorEmail/to}
+        # NETSUIT_AR_ERROR_EMAIL_USER: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/user}
+        # NETSUIT_AR_ERROR_EMAIL_PASS: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/pass}
+        # NETSUIT_AR_ERROR_EMAIL_HOST: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/host}
+        # NETSUIT_AR_ERROR_EMAIL_FROM: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/from}
+        # NETSUIT_INTERCOMPANY_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/intercompany/errorEmail/to}
+        NETSUIT_AR_WT_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/WT/errorEmail/to}
+        NETSUIT_AP_WT_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAP/WT/errorEmail/to}
+        NETSUIT_AR_MCL_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/MCL/errorEmail/to}
+
+        # Environment variable size is excedding. Hence, setting global variables to empty string which are not required for this function
+        NETSUIT_AR_API_HOST: ""
+        NETSUIT_AR_API_PATH: ""
+        NETSUIT_AR_API_ENDPOINT: ""
+        NETSUIT_AR_ACCOUNT: ""
+        NETSUIT_AR_CONSUMER_KEY: ""
+        NETSUIT_AR_CONSUMER_SECRET: ""
+        NETSUIT_AR_TOKEN_KEY: ""
+        NETSUIT_AR_TOKEN_SECRET: ""
+        NETSUIT_CW_TOKEN_KEY: ""
+        NETSUIT_CW_TOKEN_SECRET: ""
+        NETSUIT_M1_TOKEN_KEY: ""
+        NETSUIT_M1_TOKEN_SECRET: ""
+        NETSUIT_TR_TOKEN_KEY: ""
+        NETSUIT_TR_TOKEN_SECRET: ""
+        NETSUIT_MCL_CONSUMER_KEY: ""
+        NETSUIT_MCL_CONSUMER_SECRET: ""
+        NETSUIT_MCL_TOKEN_KEY: ""
+        NETSUIT_MCL_TOKEN_SECRET: ""
+        NETSUIT_AR_WDSLPATH: ""
+        NETSUIT_AR_ERROR_EMAIL_HOST: ""
+        NETSUIT_AR_ERROR_EMAIL_USER: ""
+        NETSUIT_AR_ERROR_EMAIL_PASS: ""
+        NETSUIT_AR_ERROR_EMAIL_FROM: ""
+        NETSUIT_AR_ERROR_EMAIL_TO: ""
+        NS_BASE_URL: ""
+
+    package:
+        include:
+            - src/invoice_report.js
+            - Helpers/**

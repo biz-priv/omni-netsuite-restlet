@@ -391,7 +391,7 @@ async function triggerReportLambda(functionName, payloadData) {
             .sendEmail({
                 Source: "no-reply@omnilogistics.com",
                 Destination: {
-                    ToAddresses: ["BizCloudDev@omnilogistics.com"],
+                    ToAddresses: [process.env.BIZDEV_EMAIL],
                 },
                 Message: {
                     Subject: {

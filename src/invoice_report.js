@@ -61,7 +61,7 @@ module.exports.handler = async (event) => {
         reportType = eventData[1];
         const reportTypeLower = reportType?.toLowerCase();
 
-        connections = getConnectionPool(process.env);
+        connections = getConnectionPool();
         if (["AR", "AP"].includes(reportType)) {
             await fetchDataAndSendReport({ sourceSystem, reportType, reportTypeLower });
         }
