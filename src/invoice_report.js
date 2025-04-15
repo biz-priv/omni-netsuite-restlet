@@ -986,12 +986,14 @@ function prepareRawData(data = [], reportType) {
  */
 function getErrorMessage(errorMsg) {
     if (errorMsg.includes("Vendor not found")) return "Vendor not found";
+    if (errorMsg.includes("Customer not found")) return "Customer not found";
     if (errorMsg.includes("You have entered an Invalid Field Value")) return "Field value not found";
     if (errorMsg.includes("unique key")) return "Duplicate invoices";
     if (errorMsg.includes("custcol2")) return "Location Updates";
     if (errorMsg.includes("Please enter value(s) for: Currency")) return "Wrong currency";
     if (errorMsg.includes("Unable to make payload Subsidiary")) return "Business segment error";
     if (errorMsg.includes("No valid, open, tax period for date")) return "Tax period Error";
+    if (errorMsg.includes("Please choose an item to add")) return "Charge Code error";
     return "Blanks (no sub)";
 }
 
