@@ -455,9 +455,11 @@ async function getReportData(sourceSystem, type, intercompanyType) {
         if (type === "AP") {
             // AP
             const table = `${dbname}interface_ap_api_logs`;
-            const queryNonVenErr = `select source_system,error_msg,file_nbr,vendor_id,subsidiary,invoice_nbr,invoice_date,housebill_nbr,master_bill_nbr,invoice_type,controlling_stn,currency,charge_cd,total,posted_date,gc_code,tax_code,unique_ref_nbr,internal_ref_nbr,intercompany,id,epay_status,system_id
+            const queryNonVenErr = `select source_system,error_msg,file_nbr,vendor_id,subsidiary,invoice_nbr,invoice_date,'' as finalizedby,housebill_nbr,master_bill_nbr,invoice_type,controlling_stn,currency,charge_cd,total,posted_date,gc_code,tax_code,unique_ref_nbr,internal_ref_nbr,intercompany,id,epay_status,system_id
                 from ${table} where source_system = '${sourceSystem}' and is_report_sent ='N' and 
                 error_msg NOT LIKE '%Vendor not found%'`;
+            
+                console.info('🙂 -> getReportData -> queryNonVenErr:', queryNonVenErr);
 
             console.info(queryNonVenErr);
 
@@ -532,9 +534,10 @@ async function getReportData(sourceSystem, type, intercompanyType) {
         } else if (type === "AR") {
             // AR
             const table = `${dbname}interface_ar_api_logs`;
-            const queryNonCuErr = `select source_system,error_msg,file_nbr,customer_id,subsidiary,invoice_nbr,invoice_date,housebill_nbr,master_bill_nbr,invoice_type,controlling_stn,charge_cd,curr_cd,total,posted_date,gc_code,tax_code,unique_ref_nbr,internal_ref_nbr,order_ref,ee_invoice,intercompany,id 
+            const queryNonCuErr = `select source_system,error_msg,file_nbr,customer_id,subsidiary,invoice_nbr,invoice_date,'' as finalizedby,housebill_nbr,master_bill_nbr,invoice_type,controlling_stn,charge_cd,curr_cd,total,posted_date,gc_code,tax_code,unique_ref_nbr,internal_ref_nbr,order_ref,ee_invoice,intercompany,id 
                 from ${table} where source_system = '${sourceSystem}' and is_report_sent ='N' and 
                 error_msg NOT LIKE '%Customer not found%'`;
+                console.info('🙂 -> getReportData -> queryNonCuErr:', queryNonCuErr);
             const nonCuErrdata = await executeQuery(queryNonCuErr);
             console.info("nonCuErrdata", nonCuErrdata.length);
 
