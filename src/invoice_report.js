@@ -136,7 +136,7 @@ async function fetchDataAndSendReport({ sourceSystem, reportType, reportTypeLowe
     commonWriter(workbook, inSuccessAOA, "Raw data success (IN)");
 
     //* Error Resolution Guide
-    const errorResolutionGuide = getErrorResolutionGuide();
+    const errorResolutionGuide = getErrorResolutionGuide(reportType);
     commonWriter(workbook, errorResolutionGuide, "Error Resolution Guide");
 
     //* Integration Schedule
@@ -534,7 +534,7 @@ async function getReportData(sourceSystem, type, intercompanyType) {
         } else if (type === "AR") {
             // AR
             const table = `${dbname}interface_ar_api_logs`;
-            const queryNonCuErr = `select source_system,error_msg,file_nbr,customer_id,subsidiary,invoice_nbr,invoice_date,'' as finalizedby,housebill_nbr,master_bill_nbr,invoice_type,controlling_stn,charge_cd,curr_cd,total,posted_date,gc_code,tax_code,unique_ref_nbr,internal_ref_nbr,order_ref,ee_invoice,intercompany,id 
+            const queryNonCuErr = `select source_system,error_msg,file_nbr,customer_id,subsidiary,invoice_nbr,invoice_date,'' as finalizedby,housebill_nbr,master_bill_nbr,invoice_type,controlling_stn,'' as currency,charge_cd,curr_cd,total,posted_date,gc_code,tax_code,unique_ref_nbr,internal_ref_nbr,order_ref,ee_invoice,intercompany,id 
                 from ${table} where source_system = '${sourceSystem}' and is_report_sent ='N' and 
                 error_msg NOT LIKE '%Customer not found%'`;
                 console.info('🙂 -> getReportData -> queryNonCuErr:', queryNonCuErr);
@@ -590,6 +590,7 @@ async function getReportData(sourceSystem, type, intercompanyType) {
                     master_bill_nbr: e?.master_bill_nbr ?? "",
                     invoice_type: e?.invoice_type ?? "",
                     controlling_stn: e?.controlling_stn ?? "",
+                    currency: e?.currency ?? "",
                     charge_cd: e?.charge_cd ?? "",
                     curr_cd: e?.curr_cd ?? "",
                     total: e?.total ?? "",
@@ -960,7 +961,7 @@ function convertPivotToExcelFormat(pivotData) {
 function prepareRawData(data = [], reportType) {
     const aoaData = [];
     if (!data || data.length === 0) {
-        const headers = reportType === "AR" ? ["SourceSystem", "ErrorMsg", "ErrorCategory", "FileNbr", "CustomerId", "Subsidiary", "InvoiceNbr", "InvoiceDate", "FinalizedBy", "HousebillNbr", "MasterBillNbr", "InvoiceType", "ControllingStn", "ChargeCd", "CurrCd", "Total", "PostedDate", "GcCode", "TaxCode", "UniqueRefNbr", "InternalRefNbr", "OrderRef", "EeInvoice", "Intercompany", "Id"] : ["SourceSystem", "ErrorMsg", "ErrorCategory", "FileNbr", "VendorId", "Subsidiary", "InvoiceNbr", "InvoiceDate", "FinalizedBy", "HousebillNbr", "MasterBillNbr", "InvoiceType", "ControllingStn", "Currency", "ChargeCd", "Total", "PostedDate", "GcCode", "TaxCode", "UniqueRefNbr", "InternalRefNbr", "Intercompany", "Id", "EpayStatus", "SystemId"];
+        const headers = reportType === "AR" ? ["SourceSystem", "ErrorMsg", "ErrorCategory", "FileNbr", "CustomerId", "Subsidiary", "InvoiceNbr", "InvoiceDate", "FinalizedBy", "HousebillNbr", "MasterBillNbr", "InvoiceType", "ControllingStn", "Currency", "ChargeCd", "CurrCd", "Total", "PostedDate", "GcCode", "TaxCode", "UniqueRefNbr", "InternalRefNbr", "OrderRef", "EeInvoice", "Intercompany", "Id"] : ["SourceSystem", "ErrorMsg", "ErrorCategory", "FileNbr", "VendorId", "Subsidiary", "InvoiceNbr", "InvoiceDate", "FinalizedBy", "HousebillNbr", "MasterBillNbr", "InvoiceType", "ControllingStn", "Currency", "ChargeCd", "Total", "PostedDate", "GcCode", "TaxCode", "UniqueRefNbr", "InternalRefNbr", "Intercompany", "Id", "EpayStatus", "SystemId"];
         // Add headers to aoaData
         aoaData.push(headers);
         return aoaData;
@@ -1140,8 +1141,8 @@ function getSuccessAOARawData(data = [], reportType) {
  *   - "Action Owner" (string): The team or process responsible for the action.
  *   - "POC" (string): The point of contact for the error category.
  */
-function getErrorResolutionGuide() {
-    const errorCategories = [
+function getErrorResolutionGuide(reportType) {
+    const errorCategoriesAP = [
         ["#", "Error Category", "Action Item", "Action Owner", "POC"],
         ["1", "Unique Invoices", "AP team to identify if invoice is duplicate and what the disposition of the invoice needs to be\n1. Cancel it from integration\n2. Reprocess as a new invoice", "BCE team to add letter /A and push the invoices", "Sunil"],
         ["2", "Location Updates", "AP team to provide location to BCE team.", "BCE Team + Vendor onboarding process", "Sunil/Yuliana"],
@@ -1151,7 +1152,18 @@ function getErrorResolutionGuide() {
         ["6", "Field value not found", "NS team to add the field values for vendor sub", "NS team to advice & Onboarding team if required reaches in.", "Stefan/Yuliana"],
         ["7", "Tax code issue", "Tax codes are wrong.", "BCE Team", "Sunil"],
     ];
-    return errorCategories;
+    const errorCategoriesAR = [
+        ["#", "Error Category", "Action Item", "Action Owner", "POC"],
+        ["1", "Duplicate/Unique Key", "Bizcloud checks why the duplicates arises and informs any data entry is having issues, but Reprocess as a new invoice", "BCE team to add correct suffix letter and push the invoices", "Sunil"],
+        ["2", "Location Updates", "AR team to provide location to BCE team", "AR team used to send it to Ops before notifying BCE", "Yanet/Sunil"],
+        ["3", "Business segment", "BCE team to check with Perla", "BCE team", "Sunil"],
+        ["4", "Customer not found", "AR team to onboard the customer ids into NS", "AR team onboarding process", "Lillia"],
+        ["5", "Field value not found", "NS team to add the firled values for customer sub", "NS team", "Stefan/Monique"],
+    ];
+
+    if (reportType === "AP") return errorCategoriesAP;
+
+    return errorCategoriesAR;
 }
 
 /**
