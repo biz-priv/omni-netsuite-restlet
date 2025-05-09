@@ -183,6 +183,7 @@ async function createARFailedRecords(
       master_bill_nbr: item?.master_bill_nbr ?? null,
       invoice_type: item?.invoice_type ?? null,
       controlling_stn: item?.controlling_stn ?? null,
+      currency: item?.currency ?? null,
       charge_cd: item?.charge_cd ?? null,
       total: item?.total ?? null,
       curr_cd: item?.curr_cd ?? null,
