@@ -534,7 +534,7 @@ async function getReportData(sourceSystem, type, intercompanyType) {
         } else if (type === "AR") {
             // AR
             const table = `${dbname}interface_ar_api_logs`;
-            const queryNonCuErr = `select source_system,error_msg,file_nbr,customer_id,subsidiary,invoice_nbr,invoice_date,'' as finalizedby,housebill_nbr,master_bill_nbr,invoice_type,controlling_stn,'' as currency,charge_cd,curr_cd,total,posted_date,gc_code,tax_code,unique_ref_nbr,internal_ref_nbr,order_ref,ee_invoice,intercompany,id 
+            const queryNonCuErr = `select source_system,error_msg,file_nbr,customer_id,subsidiary,invoice_nbr,invoice_date,'' as finalizedby,housebill_nbr,master_bill_nbr,invoice_type,controlling_stn,currency,charge_cd,curr_cd,total,posted_date,gc_code,tax_code,unique_ref_nbr,internal_ref_nbr,order_ref,ee_invoice,intercompany,id 
                 from ${table} where source_system = '${sourceSystem}' and is_report_sent ='N' and 
                 error_msg NOT LIKE '%Customer not found%'`;
                 console.info('🙂 -> getReportData -> queryNonCuErr:', queryNonCuErr);
