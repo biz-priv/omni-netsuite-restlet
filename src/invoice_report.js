@@ -534,7 +534,7 @@ async function getReportData(sourceSystem, type, intercompanyType) {
         } else if (type === "AR") {
             // AR
             const table = `${dbname}interface_ar_api_logs`;
-            const queryNonCuErr = `select source_system,error_msg,file_nbr,customer_id,subsidiary,invoice_nbr,invoice_date,'' as finalizedby,housebill_nbr,master_bill_nbr,invoice_type,controlling_stn,charge_cd,curr_cd,total,posted_date,gc_code,tax_code,unique_ref_nbr,internal_ref_nbr,order_ref,ee_invoice,intercompany,id 
+            const queryNonCuErr = `select source_system,error_msg,file_nbr,customer_id,subsidiary,invoice_nbr,invoice_date,'' as finalizedby,housebill_nbr,master_bill_nbr,invoice_type,controlling_stn,curr_cd as currency,charge_cd,total,posted_date,gc_code,tax_code,unique_ref_nbr,internal_ref_nbr,order_ref,ee_invoice,intercompany,id 
                 from ${table} where source_system = '${sourceSystem}' and is_report_sent ='N' and 
                 error_msg NOT LIKE '%Customer not found%'`;
                 console.info('🙂 -> getReportData -> queryNonCuErr:', queryNonCuErr);
@@ -592,7 +592,6 @@ async function getReportData(sourceSystem, type, intercompanyType) {
                     controlling_stn: e?.controlling_stn ?? "",
                     currency: e?.currency ?? "",
                     charge_cd: e?.charge_cd ?? "",
-                    curr_cd: e?.curr_cd ?? "",
                     total: e?.total ?? "",
                     posted_date: e?.posted_date ?? "",
                     gc_code: e?.gc_code ?? "",
@@ -961,7 +960,7 @@ function convertPivotToExcelFormat(pivotData) {
 function prepareRawData(data = [], reportType) {
     const aoaData = [];
     if (!data || data.length === 0) {
-        const headers = reportType === "AR" ? ["SourceSystem", "ErrorMsg", "ErrorCategory", "FileNbr", "CustomerId", "Subsidiary", "InvoiceNbr", "InvoiceDate", "FinalizedBy", "HousebillNbr", "MasterBillNbr", "InvoiceType", "ControllingStn", "Currency", "ChargeCd", "CurrCd", "Total", "PostedDate", "GcCode", "TaxCode", "UniqueRefNbr", "InternalRefNbr", "OrderRef", "EeInvoice", "Intercompany", "Id"] : ["SourceSystem", "ErrorMsg", "ErrorCategory", "FileNbr", "VendorId", "Subsidiary", "InvoiceNbr", "InvoiceDate", "FinalizedBy", "HousebillNbr", "MasterBillNbr", "InvoiceType", "ControllingStn", "Currency", "ChargeCd", "Total", "PostedDate", "GcCode", "TaxCode", "UniqueRefNbr", "InternalRefNbr", "Intercompany", "Id", "EpayStatus", "SystemId"];
+        const headers = reportType === "AR" ? ["SourceSystem", "ErrorMsg", "ErrorCategory", "FileNbr", "CustomerId", "Subsidiary", "InvoiceNbr", "InvoiceDate", "FinalizedBy", "HousebillNbr", "MasterBillNbr", "InvoiceType", "ControllingStn", "Currency", "ChargeCd", "Total", "PostedDate", "GcCode", "TaxCode", "UniqueRefNbr", "InternalRefNbr", "OrderRef", "EeInvoice", "Intercompany", "Id"] : ["SourceSystem", "ErrorMsg", "ErrorCategory", "FileNbr", "VendorId", "Subsidiary", "InvoiceNbr", "InvoiceDate", "FinalizedBy", "HousebillNbr", "MasterBillNbr", "InvoiceType", "ControllingStn", "Currency", "ChargeCd", "Total", "PostedDate", "GcCode", "TaxCode", "UniqueRefNbr", "InternalRefNbr", "Intercompany", "Id", "EpayStatus", "SystemId"];
         // Add headers to aoaData
         aoaData.push(headers);
         return aoaData;
